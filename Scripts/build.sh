@@ -8,10 +8,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# One place. The release workflow reads it from here rather than being told
+# separately, so a tag and a bundle cannot disagree about what they are.
+VERSION="1.0.0"
+
 DEST="/Applications/Boost.app"
 BUILD="build.noindex"
 STAGE="$BUILD/Boost.app"
 INSTALL=1
+[ "${1:-}" = "--version" ] && { echo "$VERSION"; exit 0; }
 [ "${1:-}" = "--no-install" ] && INSTALL=0
 
 echo "compiling…"
@@ -32,8 +37,8 @@ cat > "$STAGE/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>Boost</string>
   <key>CFBundleIdentifier</key><string>boost.local.app</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>2.1</string>
-  <key>CFBundleVersion</key><string>3</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
+  <key>CFBundleVersion</key><string>$VERSION</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
