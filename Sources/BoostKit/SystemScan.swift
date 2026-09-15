@@ -65,7 +65,10 @@ enum SystemScan {
                     path = hit.path
                 } else {
                     let n = proc_pidpath(pid, &pathBuf, UInt32(pathBuf.count))
-                    path = n > 0 ? String(cString: pathBuf)
+                    // proc_pidpath returns the length it wrote, so decode
+                    // exactly that rather than scanning for a terminator.
+                    path = n > 0 ? String(decoding: pathBuf[..<Int(n)].map { UInt8(bitPattern: $0) },
+                                          as: UTF8.self)
                                  : withUnsafePointer(to: proc.kp_proc.p_comm) {
                                        $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN) + 1) {
                                            String(cString: $0)
