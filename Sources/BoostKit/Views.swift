@@ -593,6 +593,8 @@ struct FooterBar: View {
 
             Menu {
                 Toggle("Close button quits the app", isOn: $engine.autoQuitOnClose)
+                Toggle("Global shortcut (⌥⌘B)", isOn: $engine.globalHotkey)
+                    .help("Opens Boost and closes what is ticked, from any app.")
                 Divider()
                 Toggle("Purge disk cache after closing", isOn: $engine.purgeOnBoost)
                     .help("Asks for your admin password and drops macOS's disk "
