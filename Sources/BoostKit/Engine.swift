@@ -23,6 +23,10 @@ public final class Engine: ObservableObject {
     @Published var busy: String?
     @Published var confirmForce = false
     @Published var needsAccessibility = false
+    /// Rolling window of readings, so the header can say which way things
+    /// are going rather than only where they are.
+    @Published private(set) var history = MemoryHistory()
+    private var growth = AppGrowth()
 
     /// Backed by UserDefaults by hand rather than @AppStorage, because @AppStorage
     /// inside an ObservableObject doesn't publish changes, and the permission
@@ -130,11 +134,14 @@ public final class Engine: ObservableObject {
 
     public func refresh() {
         mem = SystemScan.memory()
+        history.record(MemorySample(at: Date(), used: mem.used, cached: mem.cached,
+                                    swap: mem.swapUsed, pressure: mem.pressure))
         if autoQuitOnClose {                       // you may grant access while we run
             let granted = WindowWatcher.hasPermission
             if needsAccessibility == granted { applyAutoQuit(requesting: false) }
         }
         items = SystemScan.buildItems()            // ~4 ms; cheap enough to stay on main
+        growth.record(items.map { (id: $0.id, bytes: $0.rssBytes) })
         let live = Set(items.map(\.id))
         selection.formIntersection(live)           // forget things that have exited
         // Tick anything new that qualifies, unless you deliberately unticked it.
@@ -168,6 +175,9 @@ public final class Engine: ObservableObject {
     func items(in category: Category) -> [Item] {
         visibleItems.filter { $0.category == category }
     }
+
+    /// Bytes this app's floor has risen by, when that is worth saying.
+    func growthOf(_ item: Item) -> UInt64? { growth.growth(of: item.id) }
 
     var pausedItems: [Item] { items.filter(\.isPaused) }
     var selectedItems: [Item] {
