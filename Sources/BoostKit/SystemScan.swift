@@ -116,10 +116,20 @@ enum SystemScan {
     static func sampleProcesses() -> [pid_t: ProcSample] { Sampler.shared.sample() }
 
     /// Every descendant of `root`, so an Electron app's dozen helpers count as one thing.
+    ///
+    /// Tracks what it has already walked. A parent chain is a tree in principle
+    /// and a cycle is not supposed to be expressible, but pid reuse can produce
+    /// one: a process's parent exits, the number is handed out again, and the
+    /// new holder is a child of the original. We resample every two seconds, so
+    /// a window that small is reached eventually. Without this set that costs an
+    /// unbounded loop appending forever — on an app whose entire job is
+    /// reclaiming memory, the failure would be exhausting it.
     static func descendants(of root: pid_t, children: [pid_t: [pid_t]]) -> [pid_t] {
         var found: [pid_t] = []
+        var seen: Set<pid_t> = [root]
         var queue = children[root] ?? []
         while let next = queue.popLast() {
+            guard seen.insert(next).inserted else { continue }
             found.append(next)
             queue.append(contentsOf: children[next] ?? [])
         }
