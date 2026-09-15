@@ -60,8 +60,10 @@ final class WindowWatcher {
 
     /// Shows the system prompt and deep-links to Settings. Harmless if already granted.
     static func requestPermission() {
-        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+        // Spelled literally rather than via kAXTrustedCheckOptionPrompt: that
+        // symbol is an imported mutable global, which Swift 6 will not treat as
+        // concurrency-safe. The string it holds is API and does not change.
+        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
     }
 
     static func openAccessibilitySettings() {

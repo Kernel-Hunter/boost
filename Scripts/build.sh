@@ -1,8 +1,12 @@
 #!/bin/bash
 # Builds Boost.app and installs it to /Applications as the single copy.
-# Usage: ./build.sh [--no-install]
+# Usage: Scripts/build.sh [--no-install]
+#
+# Builds through SwiftPM and wraps the resulting executable in a bundle, so
+# there is one build path rather than two that can drift. Command Line Tools
+# alone are enough; Xcode is not required.
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 DEST="/Applications/Boost.app"
 BUILD="build.noindex"
@@ -12,9 +16,8 @@ INSTALL=1
 
 echo "compiling…"
 mkdir -p "$BUILD"
-swiftc -O -parse-as-library -swift-version 5 \
-       -o "$BUILD/Boost" \
-       Sources/*.swift
+swift build -c release --product boost
+cp "$(swift build -c release --product boost --show-bin-path)/boost" "$BUILD/Boost"
 
 rm -rf "$STAGE"
 mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources"
@@ -40,7 +43,7 @@ cat > "$STAGE/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 
-[ -f AppIcon.icns ] && cp AppIcon.icns "$STAGE/Contents/Resources/AppIcon.icns"
+[ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$STAGE/Contents/Resources/AppIcon.icns"
 
 # Signed with a stable local identity, not ad-hoc ("-"). Ad-hoc signing keys
 # TCC (Accessibility, etc.) to the exact compiled bytes, so every rebuild
@@ -61,7 +64,7 @@ pkill -x Boost 2>/dev/null || true
 sleep 1
 
 # Exactly one Boost.app should exist. Clear out any stray copies first.
-for stray in "$HOME/Applications/Boost.app" "$(dirname "$PWD")/Boost.app"; do
+for stray in "$HOME/Applications/Boost.app" "$PWD/Boost.app"; do
   [ -e "$stray" ] && { echo "removing duplicate: $stray"; rm -rf "$stray"; }
 done
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import BoostKit
 
 @main
 struct BoostApp: App {

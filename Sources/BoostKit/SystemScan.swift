@@ -12,6 +12,12 @@ enum SystemScan {
     /// Note: `ps` is setuid root and can read RSS for every process. We run as you,
     /// so memory for root-owned daemons is unreadable and reported as unknown
     /// rather than as zero. Those are all processes you could not signal anyway.
+    ///
+    /// Main-actor confined: it carries mutable state across calls (the path
+    /// cache and the previous CPU counters that make a percentage possible),
+    /// and every caller is already on the main actor. Saying so lets the
+    /// compiler prove there is no race, rather than us assuming it.
+    @MainActor
     final class Sampler {
         static let shared = Sampler()
 
@@ -106,6 +112,7 @@ enum SystemScan {
         }
     }
 
+    @MainActor
     static func sampleProcesses() -> [pid_t: ProcSample] { Sampler.shared.sample() }
 
     /// Every descendant of `root`, so an Electron app's dozen helpers count as one thing.
@@ -121,6 +128,7 @@ enum SystemScan {
 
     // MARK: - Building the item list
 
+    @MainActor
     static func buildItems(procs: [pid_t: ProcSample] = sampleProcesses()) -> [Item] {
         var children: [pid_t: [pid_t]] = [:]
         for (pid, s) in procs { children[s.ppid, default: []].append(pid) }
@@ -287,7 +295,11 @@ enum SystemScan {
         }
         guard result == KERN_SUCCESS else { return m }
 
-        let page = UInt64(vm_kernel_page_size)
+        // vm_kernel_page_size is an imported mutable global, which Swift 6
+        // will not vouch for. host_page_size is the supported way to ask.
+        var pageSize: vm_size_t = 0
+        guard host_page_size(mach_host_self(), &pageSize) == KERN_SUCCESS else { return m }
+        let page = UInt64(pageSize)
         m.free       = UInt64(vmStats.free_count) * page
         m.compressed = UInt64(vmStats.compressor_page_count) * page
         m.cached     = (UInt64(vmStats.inactive_count) + UInt64(vmStats.purgeable_count)

@@ -11,3 +11,4 @@ keep.txt
 
 # macOS
 .DS_Store
+.build/
