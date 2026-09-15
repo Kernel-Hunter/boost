@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import SwiftUI
 import Darwin
 
@@ -213,18 +214,40 @@ final class Engine: ObservableObject {
         sendQuit(item, force: force)
 
         // Some apps (Spotify, YT Music) accept a polite quit — the music
-        // stops — and then just never actually exit. Every call site (the
-        // per-row Close button, the bulk Boost button, Force Quit) goes
-        // through here, so this is the one place that needs to follow up:
-        // still alive after a beat means ask again, unrefusably.
+        // stops — and then just never actually exit. Every call site goes
+        // through here, so this is the one place that can follow up.
         guard !force else { return }
         let baseID = item.baseID
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 2_500_000_000)
             self.refresh()
-            if let stillHere = self.items.first(where: { $0.baseID == baseID }) {
-                self.sendQuit(stillHere, force: true)
-            }
+            guard let stillHere = self.items.first(where: { $0.baseID == baseID }) else { return }
+            // Only escalate against an app showing nothing. An app still
+            // holding a window after a quit request is asking you something —
+            // "Save changes before closing?" is itself a window — and killing
+            // it there destroys exactly the work the prompt existed to save.
+            // An app that is genuinely just refusing to leave has none.
+            guard self.hasNothingOnScreen(stillHere) else { return }
+            self.sendQuit(stillHere, force: true)
+        }
+    }
+
+    /// True when the app has nothing on screen — no window that is actually
+    /// showing. A "Save changes?" sheet is a visible window and stops us; a
+    /// merely minimised window is not asking anything and does not.
+    ///
+    /// Unreadable (no Accessibility permission, or a process we can't inspect)
+    /// counts as "something is showing", so we never force on a guess.
+    private func hasNothingOnScreen(_ item: Item) -> Bool {
+        guard let pid = item.runningAppPID else { return false }
+        var value: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(
+            AXUIElementCreateApplication(pid), kAXWindowsAttribute as CFString, &value)
+        guard err == .success, let windows = value as? [AXUIElement] else { return false }
+        return !windows.contains { w in
+            var mini: CFTypeRef?
+            AXUIElementCopyAttributeValue(w, kAXMinimizedAttribute as CFString, &mini)
+            return (mini as? Bool) != true      // a visible (non-minimised) window
         }
     }
 
