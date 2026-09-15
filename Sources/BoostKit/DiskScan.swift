@@ -165,6 +165,47 @@ public enum DiskScan {
         }
     }
 
+    // MARK: - Directories we decline to look inside
+
+    /// Subdirectories of `~/Library/Caches` that are skipped entirely — not
+    /// measured, not cleaned, not opened.
+    ///
+    /// These sit behind TCC. Merely *enumerating* one makes macOS put up
+    /// "Boost.app would like to access Apple Music, your music and video
+    /// activity, and your media library", which is both alarming and untrue:
+    /// the scanner wants a byte count and has no interest in the contents. A
+    /// disk cleaner that asks for your media library is indistinguishable from
+    /// the ones that deserve the suspicion, and this app's security policy
+    /// promises it reads no personal data. Costing a few hundred MB of
+    /// reclaimable space to keep that promise is the right trade.
+    ///
+    /// Matched on the first path component under Caches, so
+    /// `com.apple.Music/anything` is covered by the one entry.
+    private static let skippedCacheDirectories: Set<String> = [
+        "com.apple.Music",
+        "com.apple.iTunes",
+        "com.apple.itunescloudd",
+        "com.apple.AMPLibraryAgent",
+        "com.apple.amp.mediasharingd",
+        "com.apple.AppleMediaServices",
+        "com.apple.TV",
+        "com.apple.photolibraryd",
+        "com.apple.Photos",
+        "com.apple.Safari",          // Full Disk Access territory
+        "CloudKit",                  // may hold synced personal data
+    ]
+
+    /// True for a path we will not open. Checked before enumerating, because
+    /// the prompt is triggered by the first access, not by a failure.
+    static func isSkipped(_ url: URL, home overrideHome: URL? = nil) -> Bool {
+        let h = (overrideHome ?? home).standardizedFileURL
+        let cachesParts = h.appending(path: "Library/Caches").pathComponents
+        let parts = url.standardizedFileURL.pathComponents
+        guard parts.count > cachesParts.count,
+              Array(parts.prefix(cachesParts.count)) == cachesParts else { return false }
+        return skippedCacheDirectories.contains(parts[cachesParts.count])
+    }
+
     // MARK: - Measuring
 
     /// Total size on disk of everything under `url`.
@@ -174,6 +215,7 @@ public enum DiskScan {
     /// so a link into a large tree elsewhere is not counted as this tree's.
     public static func size(of url: URL) -> UInt64 {
         let fm = FileManager.default
+        guard !isSkipped(url) else { return 0 }
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { return 0 }
 
@@ -188,6 +230,7 @@ public enum DiskScan {
         guard let e = fm.enumerator(at: url, includingPropertiesForKeys: keys,
                                     options: [.skipsHiddenFiles]) else { return 0 }
         for case let child as URL in e {
+            if isSkipped(child) { e.skipDescendants(); continue }
             guard let v = try? child.resourceValues(forKeys: Set(keys)) else { continue }
             if v.isSymbolicLink == true { continue }
             total += UInt64(v.totalFileAllocatedSize ?? v.fileAllocatedSize ?? 0)
@@ -234,6 +277,7 @@ public enum DiskScan {
                                                             includingPropertiesForKeys: nil,
                                                             options: [])) ?? []
                 for child in children {
+                    if isSkipped(child) { continue }
                     guard isSafeToDelete(child) else {
                         result.refused.append(child.path)
                         continue
