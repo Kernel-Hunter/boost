@@ -109,7 +109,7 @@ struct AppGrowthTests {
     @Test("Leaves a large but stable app alone")
     func ignoresLargeButSteady() {
         var g = AppGrowth()
-        for _ in 0..<40 { g.record([(id: "browser", bytes: 4096 * 1_048_576)]) }
+        for _ in 0..<40 { g.record([(id: "browser", bytes: UInt64(4096) * 1_048_576)]) }
         #expect(g.growth(of: "browser") == nil)
     }
 
@@ -132,9 +132,9 @@ struct AppGrowthTests {
     @Test("An app that exits stops being tracked")
     func forgetsDeadApps() {
         var g = AppGrowth()
-        for _ in 0..<10 { g.record([(id: "gone", bytes: 500 * 1_048_576)]) }
+        for _ in 0..<10 { g.record([(id: "gone", bytes: UInt64(500) * 1_048_576)]) }
         #expect(g.samples(for: "gone") == 10)
-        g.record([(id: "other", bytes: 100 * 1_048_576)])
+        g.record([(id: "other", bytes: UInt64(100) * 1_048_576)])
         #expect(g.samples(for: "gone") == 0)
     }
 
