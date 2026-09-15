@@ -257,6 +257,21 @@ struct MemoryHeader: View {
                      ? "Nothing ticked"
                      : "Closes \(engine.selectedItems.count) · frees ~\(fmtBytes(engine.selectedBytes))")
                     .font(.caption2).foregroundStyle(.secondary)
+
+                Button {
+                    engine.freeMemory()
+                } label: {
+                    Label("Free memory", systemImage: "wand.and.sparkles")
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .disabled(engine.busy != nil)
+                .accessibilityLabel("Free memory without closing anything")
+                .help("Drops macOS's disk cache without closing anything. Asks for your "
+                    + "password. The figure it frees was already available memory, and the "
+                    + "Mac is briefly slower afterwards — Pause is the one that genuinely "
+                    + "gives memory back.")
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 18)

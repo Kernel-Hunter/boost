@@ -322,6 +322,55 @@ public final class Engine: ObservableObject {
         }
     }
 
+    /// Frees memory without closing anything, and then tells you the truth about
+    /// what that achieved.
+    ///
+    /// The only lever macOS gives you here is `purge`, which drops the file
+    /// cache. That number moves — often by gigabytes — and it is mostly
+    /// theatre: the cache was *available* memory already, and everything thrown
+    /// away has to be read off disk again, so the Mac is briefly slower for it.
+    /// Every "free up RAM" utility is doing this, and none of them say so.
+    ///
+    /// So it measures before and after and reports what actually changed,
+    /// including when the honest answer is that nothing worth having was
+    /// gained. If you want memory back and you want to keep it, Pause is the
+    /// button that does that.
+    func freeMemory() {
+        guard busy == nil else { return }
+        busy = "Freeing…"
+        let before = SystemScan.memory()
+
+        Task {
+            let note = await Self.purgeCaches()
+            await MainActor.run {
+                self.busy = nil
+                self.refresh()
+                let after = self.mem
+
+                guard note.hasPrefix("Disk cache purged") else {
+                    self.report(note)       // cancelled at the password prompt, or unavailable
+                    return
+                }
+
+                // `used` is what the header calls in use. Cached moving is not a
+                // win on its own, so it is reported separately rather than
+                // folded into one flattering figure.
+                let usedFreed = before.used > after.used ? before.used - after.used : 0
+                let cacheDropped = before.cached > after.cached ? before.cached - after.cached : 0
+
+                if usedFreed >= 100 * 1_048_576 {
+                    self.report("Freed \(fmtBytes(usedFreed)) of memory in use.")
+                } else if cacheDropped > 0 {
+                    self.report("Dropped \(fmtBytes(cacheDropped)) of disk cache. "
+                              + "That memory was already available — the Mac will be "
+                              + "briefly slower while it reads it back.")
+                } else {
+                    self.report("Nothing to free. Your Mac was not holding anything back.")
+                }
+            }
+        }
+    }
+
     /// `purge` needs root, so this raises the standard macOS authentication sheet.
     nonisolated static func purgeCaches() async -> String {
         await withCheckedContinuation { cont in
