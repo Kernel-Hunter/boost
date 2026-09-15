@@ -142,6 +142,8 @@ public final class Engine: ObservableObject {
         }
         items = SystemScan.buildItems()            // ~4 ms; cheap enough to stay on main
         growth.record(items.map { (id: $0.id, bytes: $0.rssBytes) })
+        Rules.shared.evaluate(swapBytes: mem.swapUsed,
+                              pause: { [weak self] in self?.pauseSelected() })
         let live = Set(items.map(\.id))
         selection.formIntersection(live)           // forget things that have exited
         // Tick anything new that qualifies, unless you deliberately unticked it.
