@@ -4,7 +4,7 @@ import SwiftUI
 import Darwin
 
 @MainActor
-final class Engine: ObservableObject {
+public final class Engine: ObservableObject {
 
     @Published var items: [Item] = []
     @Published var mem = MemStats()
@@ -35,7 +35,15 @@ final class Engine: ObservableObject {
     }
 
     @AppStorage("resumeOnQuit") var resumeOnQuit = true
-    @AppStorage("purgeOnBoost") var purgeOnBoost = true
+    /// Off by default, deliberately. Purging asks for your admin password to
+    /// run /usr/sbin/purge as root, and what it does is throw away macOS's
+    /// disk cache — the same cache this app's own header tells you is
+    /// available memory, not waste. Dropping it makes "free" go up and the
+    /// machine slower, because everything it discarded has to come off disk
+    /// again. It is occasionally useful before a benchmark. It is not a
+    /// routine part of reclaiming memory, and an app should not ask for root
+    /// on your behalf by default.
+    @AppStorage("purgeOnBoost") var purgeOnBoost = false
 
     private var timer: Timer?
     /// Things the user has explicitly unticked. Without this, newly launched apps
@@ -47,7 +55,7 @@ final class Engine: ObservableObject {
         .appendingPathComponent("Library/Application Support/Boost", isDirectory: true)
     private static let keepURL = supportDir.appendingPathComponent("keep.txt")
 
-    static let shared = Engine()
+    public static let shared = Engine()
 
     init() {
         loadKeepList()
@@ -89,7 +97,7 @@ final class Engine: ObservableObject {
         WindowWatcher.shared.isEnabled = autoQuitOnClose && WindowWatcher.hasPermission
     }
 
-    func refresh() {
+    public func refresh() {
         mem = SystemScan.memory()
         if autoQuitOnClose {                       // you may grant access while we run
             let granted = WindowWatcher.hasPermission
@@ -269,7 +277,7 @@ final class Engine: ObservableObject {
 
     /// Sweeps the whole system for suspended processes, not just ones we paused —
     /// so nothing can get stranded frozen if Boost was quit or crashed.
-    func resumeEverything() {
+    public func resumeEverything() {
         let procs = SystemScan.sampleProcesses()
         var woken = 0
         for (pid, s) in procs where s.stopped {

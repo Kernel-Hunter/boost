@@ -3,8 +3,12 @@ import AppKit
 
 // MARK: - Icons
 
+/// Main-actor confined rather than `nonisolated(unsafe)`: it is a plain mutable
+/// dictionary with no locking, and every caller is a view, which is already on
+/// the main actor. Stating that is free and lets the compiler hold us to it.
+@MainActor
 enum IconCache {
-    nonisolated(unsafe) private static var store: [String: NSImage] = [:]
+    private static var store: [String: NSImage] = [:]
     static func icon(for item: Item) -> NSImage? {
         let key = item.bundlePath ?? item.id
         if let hit = store[key] { return hit }
@@ -22,10 +26,12 @@ enum IconCache {
 
 // MARK: - Root
 
-struct ContentView: View {
+public struct ContentView: View {
     @ObservedObject private var engine = Engine.shared
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         VStack(spacing: 0) {
             MemoryHeader(engine: engine)
             Divider().opacity(0.5)
@@ -479,6 +485,9 @@ struct FooterBar: View {
                 Toggle("Close button quits the app", isOn: $engine.autoQuitOnClose)
                 Divider()
                 Toggle("Purge disk cache after closing", isOn: $engine.purgeOnBoost)
+                    .help("Asks for your admin password and drops macOS's disk "
+                        + "cache. Makes free memory look higher and the Mac "
+                        + "briefly slower. Rarely worth it — off by default.")
                 Toggle("Resume everything when Boost quits", isOn: $engine.resumeOnQuit)
                 Divider()
                 Button("Force Quit Selected…") { engine.confirmForce = true }
