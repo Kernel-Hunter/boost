@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Test
+        run: ./Scripts/test.sh
+
+      # Builds the real bundle, not just the library: the app is assembled by a
+      # script, and that script has broken on its own before now.
+      - name: Build app bundle
+        run: ./Scripts/build.sh --no-install
