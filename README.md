@@ -21,6 +21,9 @@ cd boost && ./Scripts/build.sh
 
 macOS 14+. Builds with Command Line Tools — Xcode is not required.
 
+![Boost's memory tab: 10.40 GB in use of 16.00 GB, a pressure sparkline, and a
+list of running apps grouped with their helper processes](docs/images/memory.png)
+
 > **On signing.** Boost is signed with a local certificate, not notarized:
 > notarizing needs a paid Apple Developer account, and this is free software.
 > A direct download of the `.zip` will therefore be stopped by Gatekeeper, and
@@ -86,6 +89,12 @@ What it will not touch is the point:
 - Anything behind a privacy prompt — it skips Music, Photos and Safari caches
   rather than ask for access to your media library, because a disk cleaner that
   asks for that is indistinguishable from the ones that deserve the suspicion
+
+![Boost's disk tab, listing reclaimable caches with an explanation of what each
+one is and nothing ticked by default](docs/images/disk.png)
+
+Nothing is ticked for you. This deletes files, so opting in should be a decision
+rather than the default that happens to be on screen.
 
 Two independent safety layers: an allowlist of what may be scanned, and a
 second check of the **resolved** path immediately before every deletion. A
