@@ -34,6 +34,16 @@ public final class Engine: ObservableObject {
         }
     }
 
+    /// ⌥⌘B from anywhere. Off by default: a global shortcut claims that
+    /// combination for the whole machine, which is not something an app should
+    /// help itself to on first launch.
+    @Published var globalHotkey: Bool = UserDefaults.standard.bool(forKey: "globalHotkey") {
+        didSet {
+            UserDefaults.standard.set(globalHotkey, forKey: "globalHotkey")
+            applyHotkey()
+        }
+    }
+
     @AppStorage("resumeOnQuit") var resumeOnQuit = true
     /// Off by default, deliberately. Purging asks for your admin password to
     /// run /usr/sbin/purge as root, and what it does is throw away macOS's
@@ -65,6 +75,7 @@ public final class Engine: ObservableObject {
         ) { _ in MainActor.assumeIsolated { Engine.shared.applicationWillTerminate() } }
         refresh()
         applyAutoQuit(requesting: false)   // restore the setting across launches
+        applyHotkey()
         startTimer(every: 2.0)
         for (name, interval) in [(NSApplication.didBecomeActiveNotification, 2.0),
                                  (NSApplication.didResignActiveNotification, 10.0)] {
@@ -95,6 +106,26 @@ public final class Engine: ObservableObject {
         }
         needsAccessibility = autoQuitOnClose && !WindowWatcher.hasPermission
         WindowWatcher.shared.isEnabled = autoQuitOnClose && WindowWatcher.hasPermission
+    }
+
+    /// Claims or releases ⌥⌘B. Pressing it brings Boost forward and closes what
+    /// is ticked — the thing you wanted when you reached for a shortcut on a Mac
+    /// that had stopped responding well.
+    func applyHotkey() {
+        guard globalHotkey else {
+            Hotkey.shared.unregister()
+            return
+        }
+        Hotkey.shared.register { [weak self] in
+            guard let self else { return }
+            NSApp.activate(ignoringOtherApps: true)
+            self.quitSelected()
+        }
+        // Registration is first-come. Failing silently would be indistinguishable
+        // from a broken keyboard, so say which it is.
+        if !Hotkey.shared.isRegistered {
+            report("Could not claim ⌥⌘B — another app already holds it.")
+        }
     }
 
     public func refresh() {
