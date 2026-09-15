@@ -1,0 +1,13 @@
+# Build output
+build.noindex/
+*.o
+*.swiftmodule
+.build/
+DerivedData/
+
+# Runtime state — user-specific, not part of the project
+boost.log
+keep.txt
+
+# macOS
+.DS_Store

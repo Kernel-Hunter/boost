@@ -1,0 +1,24 @@
+# Background helpers and menu-bar agents to kill in addition to visible apps.
+# These have no windows, so they don't show up as "apps" — but they hold RAM
+# and wake the CPU. They relaunch on next login (or when you reopen them).
+#
+# Everything here is matched by exact process name.
+
+OneDrive
+
+# --- detected on your Mac, uncomment to include ---
+# CodexBar
+# Sapphire
+# Vorssaint
+# Übersicht
+
+# --- common heavy ones, if you ever install them ---
+# Docker
+# Dropbox
+# Slack
+# Discord
+# zoom.us
+# Creative Cloud
+# Adobe Desktop Service
+# Google Drive
+# Steam
