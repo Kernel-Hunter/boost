@@ -295,6 +295,10 @@ enum SystemScan {
 
     // MARK: - Memory
 
+    /// Same reading, named so the off-main-actor reclaim loop can call it
+    /// without pretending it is UI work.
+    static func memoryNonIsolated() -> MemStats { memory() }
+
     static func memory() -> MemStats {
         var m = MemStats()
         m.total = ProcessInfo.processInfo.physicalMemory

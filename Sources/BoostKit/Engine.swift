@@ -365,53 +365,59 @@ public final class Engine: ObservableObject {
         }
     }
 
-    /// Frees memory without closing anything, and then tells you the truth about
-    /// what that achieved.
+    /// Gives memory back without closing anything.
     ///
-    /// The only lever macOS gives you here is `purge`, which drops the file
-    /// cache. That number moves — often by gigabytes — and it is mostly
-    /// theatre: the cache was *available* memory already, and everything thrown
-    /// away has to be read off disk again, so the Mac is briefly slower for it.
-    /// Every "free up RAM" utility is doing this, and none of them say so.
-    ///
-    /// So it measures before and after and reports what actually changed,
-    /// including when the honest answer is that nothing worth having was
-    /// gained. If you want memory back and you want to keep it, Pause is the
-    /// button that does that.
+    /// Two different mechanisms, and the order matters. The first is the one
+    /// that actually returns memory apps are holding: see `Reclaim`. The second
+    /// is `purge`, which only drops the disk cache — a figure that moves by
+    /// gigabytes while handing back memory that was already available, and
+    /// costs a slower Mac until it is read back. It needs your admin password
+    /// and stays opt-in, off by default.
     func freeMemory() {
         guard busy == nil else { return }
         busy = "Freeing…"
-        let before = SystemScan.memory()
+        let alsoPurge = purgeOnBoost
 
         Task {
-            let note = await Self.purgeCaches()
+            let outcome = await Task.detached(priority: .userInitiated) {
+                Reclaim.run()
+            }.value
+
+            var purgeNote = ""
+            if alsoPurge { purgeNote = await Self.purgeCaches() }
+
             await MainActor.run {
                 self.busy = nil
                 self.refresh()
-                let after = self.mem
-
-                guard note.hasPrefix("Disk cache purged") else {
-                    self.report(note)       // cancelled at the password prompt, or unavailable
-                    return
-                }
-
-                // `used` is what the header calls in use. Cached moving is not a
-                // win on its own, so it is reported separately rather than
-                // folded into one flattering figure.
-                let usedFreed = before.used > after.used ? before.used - after.used : 0
-                let cacheDropped = before.cached > after.cached ? before.cached - after.cached : 0
-
-                if usedFreed >= 100 * 1_048_576 {
-                    self.report("Freed \(fmtBytes(usedFreed)) of memory in use.")
-                } else if cacheDropped > 0 {
-                    self.report("Dropped \(fmtBytes(cacheDropped)) of disk cache. "
-                              + "That memory was already available — the Mac will be "
-                              + "briefly slower while it reads it back.")
-                } else {
-                    self.report("Nothing to free. Your Mac was not holding anything back.")
-                }
+                self.report(Self.describe(outcome, purgeNote: purgeNote))
             }
         }
+    }
+
+    /// Says what happened, including when the answer is that nothing did.
+    /// Inventing a figure here is what the rest of this category does.
+    static func describe(_ outcome: Reclaim.Outcome, purgeNote: String = "") -> String {
+        var text: String
+
+        if outcome.refused {
+            text = "Not enough spare memory to do this safely — freeing works by "
+                 + "briefly asking for memory, and there is none to ask for. "
+                 + "Close or pause something first."
+        } else if outcome.freed >= 100 * 1_048_576 {
+            text = "Freed \(fmtBytes(UInt64(outcome.freed)))."
+            if outcome.stoppedOnSwap {
+                text += " Stopped early — your Mac started paging to disk, which "
+                      + "costs more than it returns."
+            }
+        } else if outcome.stoppedOnSwap {
+            text = "Stopped — your Mac started paging to disk straight away. "
+                 + "There was nothing idle left to reclaim."
+        } else {
+            text = "Nothing to free. Your Mac was not holding anything back."
+        }
+
+        if !purgeNote.isEmpty { text += " " + purgeNote }
+        return text
     }
 
     /// `purge` needs root, so this raises the standard macOS authentication sheet.

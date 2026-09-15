@@ -273,17 +273,19 @@ struct MemoryHeader: View {
                 Button {
                     engine.freeMemory()
                 } label: {
-                    Label("Free memory", systemImage: "wand.and.sparkles")
-                        .font(.caption)
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.left.and.arrow.up.right")
+                        Text("Free Memory")
+                    }
+                    .frame(minWidth: 116)
+                    .padding(.vertical, 4)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .controlSize(.regular)
                 .disabled(engine.busy != nil)
                 .accessibilityLabel("Free memory without closing anything")
-                .help("Drops macOS's disk cache without closing anything. Asks for your "
-                    + "password. The figure it frees was already available memory, and the "
-                    + "Mac is briefly slower afterwards — Pause is the one that genuinely "
-                    + "gives memory back.")
+                .help("Reclaims memory your apps are holding but not using, without "
+                    + "closing anything. Needs no password. Stops on its own if your Mac "
+                    + "starts paging to disk.")
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 18)
