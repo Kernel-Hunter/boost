@@ -6,7 +6,10 @@ something here does not match the code, that is a bug — please report it.
 
 ## Reporting a vulnerability
 
-Email **karim.masmoudi@medtech.tn** with "Boost security" in the subject.
+Use GitHub's **private vulnerability reporting** — the *Report a vulnerability*
+button under the Security tab. It goes straight to the maintainer and stays
+private until there is a fix.
+
 Please don't open a public issue for anything exploitable.
 
 Expect a reply within a week. There is no bounty — this is a solo project.
