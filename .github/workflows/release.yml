@@ -1,0 +1,76 @@
+name: Release
+
+# Cutting a release is pushing a tag. Everything else — building the bundle,
+# zipping it, working out the checksum Homebrew needs, writing the notes — is
+# here, so a release cannot be half-done or built from a dirty working copy.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # The tag and the bundle must not be able to disagree about the version.
+      - name: Check the tag matches the app
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          APP="$(./Scripts/build.sh --version)"
+          if [ "$TAG" != "$APP" ]; then
+            echo "Tag says $TAG, Scripts/build.sh says $APP." >&2
+            echo "Bump VERSION in Scripts/build.sh to match the tag." >&2
+            exit 1
+          fi
+
+      - name: Test
+        run: ./Scripts/test.sh
+
+      - name: Build
+        run: ./Scripts/build.sh --no-install
+
+      # ditto rather than zip: it is the macOS-native archiver and preserves the
+      # bundle's resource forks and symlinks, which a plain zip mangles.
+      - name: Package
+        run: |
+          cd build.noindex
+          ditto -c -k --sequesterRsrc --keepParent Boost.app Boost.zip
+          shasum -a 256 Boost.zip | tee ../checksum.txt
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="$(cut -d' ' -f1 checksum.txt)"
+          cat > notes.md <<EOF
+          ## Install
+
+          \`\`\`bash
+          brew install --cask kernel-hunter/boost/boost
+          \`\`\`
+
+          Or download \`Boost.zip\` below and drag it to Applications.
+
+          Boost is **not notarized** — it is signed with a local certificate, so
+          a direct download will be stopped by Gatekeeper the first time.
+          Homebrew handles this for you; if you downloaded the zip by hand,
+          right-click the app and choose *Open*.
+
+          Building it yourself avoids the question entirely:
+
+          \`\`\`bash
+          git clone https://github.com/Kernel-Hunter/boost.git
+          cd boost && ./Scripts/build.sh
+          \`\`\`
+
+          SHA-256: \`$SHA\`
+          EOF
+
+          gh release create "$GITHUB_REF_NAME" \
+            build.noindex/Boost.zip \
+            --title "Boost $GITHUB_REF_NAME" \
+            --notes-file notes.md
