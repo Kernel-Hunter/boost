@@ -232,6 +232,18 @@ struct MemoryHeader: View {
                         .font(.caption)
                         .foregroundStyle(engine.mem.swapUsed == 0 ? .secondary : statusColor)
                 }
+
+                if engine.history.count >= 2 {
+                    HStack(spacing: 10) {
+                        Sparkline(values: engine.history.pressureSeries, tint: statusColor)
+                            .frame(width: 120, height: 22)
+                        if let trend = engine.history.trend() {
+                            Text(trend)
+                                .font(.caption)
+                                .foregroundStyle(engine.history.swapStarted ? statusColor : .secondary)
+                        }
+                    }
+                }
             }
 
             Spacer(minLength: 0)
@@ -454,6 +466,15 @@ struct ItemRow: View {
                     if item.isPaused { badge("Paused", .orange) }
                     if locked { badge("Protected", .secondary) }
                     else if kept { badge("Kept", .blue) }
+                    // Big is not a problem — a browser is supposed to be big.
+                    // A floor that keeps rising is, and it is invisible in a
+                    // single reading.
+                    if let grown = engine.growthOf(item) {
+                        badge("+\(fmtBytes(grown))", .purple)
+                            .help("Its lowest memory use has risen by \(fmtBytes(grown)) "
+                                + "since Boost started watching — it is not giving back "
+                                + "what it takes.")
+                    }
                 }
                 Text(item.processCount == 1 ? "1 process" : "\(item.processCount) processes")
                     .font(.system(size: 10)).foregroundStyle(.tertiary)
@@ -653,5 +674,47 @@ struct Toast: View {
             .overlay(Capsule().stroke(Color.primary.opacity(0.08)))
             .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
             .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+}
+
+// MARK: - History
+
+/// Pressure over the last while, drawn as a filled line.
+///
+/// Hand-rolled with Path rather than Swift Charts: this is one series with no
+/// axes, no legend and no interaction, which is a few lines here and a
+/// framework dependency there. It also keeps the app building with Command
+/// Line Tools alone, which a macro-using dependency would end.
+struct Sparkline: View {
+    let values: [Double]
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            // Needs two points to be a line. One reading is not a shape.
+            if values.count >= 2 {
+                let step = w / CGFloat(values.count - 1)
+                let points = values.enumerated().map { i, v in
+                    CGPoint(x: CGFloat(i) * step, y: h - (CGFloat(max(0, min(1, v))) * h))
+                }
+
+                // Fill first, line over it, so the stroke stays crisp.
+                Path { p in
+                    p.move(to: CGPoint(x: 0, y: h))
+                    p.addLines(points)
+                    p.addLine(to: CGPoint(x: w, y: h))
+                    p.closeSubpath()
+                }
+                .fill(LinearGradient(colors: [tint.opacity(0.28), tint.opacity(0.02)],
+                                     startPoint: .top, endPoint: .bottom))
+
+                Path { p in p.addLines(points) }
+                    .stroke(tint.opacity(0.85), style: StrokeStyle(lineWidth: 1.5,
+                                                                   lineCap: .round,
+                                                                   lineJoin: .round))
+            }
+        }
+        .accessibilityHidden(true)      // the trend sentence beside it says this in words
     }
 }
