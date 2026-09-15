@@ -54,6 +54,7 @@ public struct ContentView: View {
     @ObservedObject private var engine = Engine.shared
     @ObservedObject private var disk = DiskEngine.shared
     @StateObject private var tabs = TabSelection()
+    @StateObject private var firstRun = FirstRun()
 
     public init() {}
 
@@ -83,6 +84,7 @@ public struct ContentView: View {
             FilterBar(engine: engine)
             Divider().opacity(0.5)
             if engine.needsAccessibility { AccessibilityBanner(engine: engine) }
+            if !firstRun.dismissed { FirstRunCard(firstRun: firstRun) }
             processList
             FooterBar(engine: engine)
         }
@@ -128,11 +130,31 @@ public struct ContentView: View {
         .environment(\.defaultMinListRowHeight, 1)
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").font(.system(size: 26)).foregroundStyle(.tertiary)
-            Text(engine.search.isEmpty ? "Nothing running to show." : "No matches for “\(engine.search)”.")
-                .foregroundStyle(.secondary)
+    /// An empty list here nearly always means a filter is on, not that nothing
+    /// is running — so it says which, and offers the way out.
+    @ViewBuilder private var emptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: engine.search.isEmpty ? "checkmark.circle" : "magnifyingglass")
+                .font(.system(size: 26))
+                .foregroundStyle(.tertiary)
+
+            if !engine.search.isEmpty {
+                Text("No matches for “\(engine.search)”")
+                    .foregroundStyle(.secondary)
+                Button("Clear the filter") { engine.search = "" }
+                    .controlSize(.small)
+            } else if !engine.showSystem {
+                Text("Nothing of yours is running.")
+                    .foregroundStyle(.secondary)
+                Text("macOS's own processes are hidden — turn on **Show system processes** to see them.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 320)
+            } else {
+                Text("Nothing running to show.")
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity).padding(.vertical, 70)
     }
@@ -753,5 +775,63 @@ struct RuleMenuItems: View {
                 ForEach(RuleAction.allCases, id: \.self) { Text($0.title).tag($0) }
             }
         }
+    }
+}
+
+// MARK: - First run
+
+/// Shown once, above the list, the first time Boost is opened.
+///
+/// Not a modal tour. The only thing a new user genuinely needs before touching
+/// anything is that one of the two buttons is reversible and the other is not,
+/// and that the big number is usually fine — everything else is discoverable by
+/// reading the window. A wall of slides in front of a utility is a tax on
+/// people who already understood it from the first screen.
+final class FirstRun: ObservableObject {
+    @Published var dismissed: Bool {
+        didSet { UserDefaults.standard.set(dismissed, forKey: "firstRunDismissed") }
+    }
+    init() { dismissed = UserDefaults.standard.bool(forKey: "firstRunDismissed") }
+}
+
+struct FirstRunCard: View {
+    @ObservedObject var firstRun: FirstRun
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "hand.wave")
+                .font(.system(size: 15))
+                .foregroundStyle(.tint)
+                .padding(.top, 1)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Two things worth knowing")
+                    .font(.system(size: 12, weight: .semibold))
+
+                // Markdown, and therefore written as single literals. SwiftUI
+                // only parses it from a literal: build the same string with `+`
+                // and it becomes a runtime String, which renders the asterisks
+                // instead of the bold. That mistake is invisible in code review
+                // and obvious in a screenshot.
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("**Pause** freezes an app at zero CPU and brings it back exactly as it was. **Close** quits it. Pausing is the reversible one.")
+                    Text("A big number in use is usually fine. **Swap** is what tells you your Mac has actually run out — at *no swap*, there is little to gain here.")
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Button("Got it") {
+                withAnimation(.spring(duration: 0.3, bounce: 0)) { firstRun.dismissed = true }
+            }
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 22).padding(.vertical, 11)
+        .background(Color.accentColor.opacity(0.07))
+        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 }
