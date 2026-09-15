@@ -617,6 +617,8 @@ struct FooterBar: View {
                 Toggle("Global shortcut (⌥⌘B)", isOn: $engine.globalHotkey)
                     .help("Opens Boost and closes what is ticked, from any app.")
                 Divider()
+                RuleMenuItems()
+                Divider()
                 Toggle("Purge disk cache after closing", isOn: $engine.purgeOnBoost)
                     .help("Asks for your admin password and drops macOS's disk "
                         + "cache. Makes free memory look higher and the Mac "
@@ -716,5 +718,38 @@ struct Sparkline: View {
             }
         }
         .accessibilityHidden(true)      // the trend sentence beside it says this in words
+    }
+}
+
+
+// MARK: - Rules
+
+/// The automation settings, in the overflow menu beside the other switches.
+struct RuleMenuItems: View {
+    @ObservedObject private var rules = Rules.shared
+
+    var body: some View {
+        Toggle("Warn me when swap climbs", isOn: Binding(
+            get: { rules.enabled },
+            set: { on in
+                rules.enabled = on
+                // Asking for notification permission belongs to the moment you
+                // switch this on, not to app launch and not to a property setter.
+                if on { rules.requestPermission() }
+            }
+        ))
+        .help("Swap is the number that means your Mac has actually run out, "
+            + "rather than merely being busy.")
+
+        if rules.enabled {
+            Picker("Past", selection: $rules.swapThresholdGB) {
+                Text("1 GB of swap").tag(1.0)
+                Text("2 GB of swap").tag(2.0)
+                Text("4 GB of swap").tag(4.0)
+            }
+            Picker("Then", selection: $rules.action) {
+                ForEach(RuleAction.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+        }
     }
 }
