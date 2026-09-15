@@ -194,3 +194,48 @@ struct DiskScanBehaviourTests {
         }
     }
 }
+
+/// Merely enumerating a TCC-protected cache makes macOS ask the user for access
+/// to their media library. A disk cleaner that asks for that is indistinguishable
+/// from the ones that deserve suspicion.
+@Suite("Protected caches are not opened")
+struct DiskScanSkipTests {
+
+    let home = URL(fileURLWithPath: "/Users/tester")
+
+    private func skipped(_ path: String) -> Bool {
+        DiskScan.isSkipped(URL(fileURLWithPath: path), home: home)
+    }
+
+    @Test("Skips caches that sit behind a privacy prompt", arguments: [
+        "/Users/tester/Library/Caches/com.apple.Music",
+        "/Users/tester/Library/Caches/com.apple.Music/subdir/file",
+        "/Users/tester/Library/Caches/com.apple.iTunes",
+        "/Users/tester/Library/Caches/com.apple.AMPLibraryAgent",
+        "/Users/tester/Library/Caches/com.apple.Photos",
+        "/Users/tester/Library/Caches/com.apple.Safari",
+        "/Users/tester/Library/Caches/CloudKit/anything",
+    ])
+    func skipsProtected(path: String) {
+        #expect(skipped(path))
+    }
+
+    @Test("Does not skip ordinary caches", arguments: [
+        "/Users/tester/Library/Caches/Homebrew",
+        "/Users/tester/Library/Caches/pip",
+        "/Users/tester/Library/Caches/com.example.app",
+        "/Users/tester/Library/Logs/Something",
+        "/Users/tester/.Trash/file",
+    ])
+    func keepsOrdinary(path: String) {
+        #expect(!skipped(path))
+    }
+
+    /// Matching on a prefix rather than the whole component would take
+    /// unrelated directories with it.
+    @Test("Matches whole directory names, not prefixes")
+    func matchesWholeComponent() {
+        #expect(!skipped("/Users/tester/Library/Caches/com.apple.MusicPlayerThing"))
+        #expect(!skipped("/Users/tester/Library/Caches/CloudKitten"))
+    }
+}

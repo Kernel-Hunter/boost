@@ -26,12 +26,57 @@ enum IconCache {
 
 // MARK: - Root
 
+public enum Tab: String, CaseIterable, Identifiable {
+    case memory, disk
+    public var id: String { rawValue }
+    var title: String { self == .memory ? "Memory" : "Disk" }
+    var symbol: String { self == .memory ? "memorychip" : "internaldrive" }
+}
+
+/// Which tab is showing, remembered across launches — reopening the app on
+/// the tab you left it on is the behaviour people expect and notice when it
+/// is missing.
+///
+/// A tiny ObservableObject rather than @State because @State is macro-backed
+/// in this SDK and SwiftUIMacros ships with Xcode, not with Command Line
+/// Tools — see CONTRIBUTING. Same reason as RowHover below.
+final class TabSelection: ObservableObject {
+    @Published var tab: Tab {
+        didSet { UserDefaults.standard.set(tab.rawValue, forKey: "selectedTab") }
+    }
+    init() {
+        let saved = UserDefaults.standard.string(forKey: "selectedTab") ?? ""
+        tab = Tab(rawValue: saved) ?? .memory
+    }
+}
+
 public struct ContentView: View {
     @ObservedObject private var engine = Engine.shared
+    @ObservedObject private var disk = DiskEngine.shared
+    @StateObject private var tabs = TabSelection()
 
     public init() {}
 
     public var body: some View {
+        VStack(spacing: 0) {
+            TabBar(tab: $tabs.tab)
+            Divider().opacity(0.5)
+            switch tabs.tab {
+            case .memory: memoryTab
+            case .disk:   DiskView(engine: disk)
+            }
+        }
+        .frame(minWidth: 820, minHeight: 600)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .overlay(alignment: .bottom) {
+            if let report = disk.report, tabs.tab == .disk {
+                Toast(text: report).padding(.bottom, 76)
+            }
+        }
+        .animation(.spring(duration: 0.3, bounce: 0), value: disk.report)
+    }
+
+    private var memoryTab: some View {
         VStack(spacing: 0) {
             MemoryHeader(engine: engine)
             Divider().opacity(0.5)
@@ -41,8 +86,6 @@ public struct ContentView: View {
             processList
             FooterBar(engine: engine)
         }
-        .frame(minWidth: 820, minHeight: 600)
-        .background(Color(nsColor: .windowBackgroundColor))
         .overlay(alignment: .bottom) {
             if let report = engine.lastReport { Toast(text: report).padding(.bottom, 76) }
         }
@@ -92,6 +135,51 @@ public struct ContentView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 70)
+    }
+}
+
+// MARK: - Tabs
+
+/// Hand-rolled rather than a TabView: the two tabs need to sit above content
+/// that already has its own header and footer bars, and TabView on macOS
+/// insists on framing the whole thing.
+struct TabBar: View {
+    @Binding var tab: Tab
+    @Namespace private var underline
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(Tab.allCases) { t in
+                Button {
+                    tab = t
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: t.symbol).font(.system(size: 11))
+                        Text(t.title).font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(tab == t ? Color.primary : Color.secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(alignment: .bottom) {
+                        if tab == t {
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(Color.accentColor)
+                                .frame(height: 2)
+                                .matchedGeometryEffect(id: "underline", in: underline)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(t == .memory ? "Running apps and memory" : "Reclaimable disk space")
+                .accessibilityLabel(t.title)
+                .accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 4)
+        .background(.bar)
+        .animation(.spring(duration: 0.25, bounce: 0), value: tab)
     }
 }
 
@@ -202,6 +290,9 @@ struct MemoryBar: View {
             }
         }
         .animation(.easeOut(duration: 0.25), value: mem.used)
+        .accessibilityElement()
+        .accessibilityLabel("Memory use")
+        .accessibilityValue("\(fmtBytes(mem.used)) in use, \(fmtBytes(mem.cached)) cached, of \(fmtBytes(mem.total))")
     }
 }
 
@@ -336,6 +427,7 @@ struct ItemRow: View {
             ))
             .labelsHidden().toggleStyle(.checkbox)
             .disabled(locked || kept)
+            .accessibilityLabel("Select \(item.name)")
 
             iconView
 
@@ -400,18 +492,21 @@ struct ItemRow: View {
             }
             .buttonStyle(.borderless).disabled(locked)
             .help(item.isPaused ? "Resume" : "Pause — freezes it at zero CPU, keeps its state")
+            .accessibilityLabel(item.isPaused ? "Resume \(item.name)" : "Pause \(item.name)")
 
             Button { engine.quit(item); engine.refresh() } label: {
                 Image(systemName: "xmark").font(.system(size: 10))
             }
             .buttonStyle(.borderless).disabled(locked)
             .help("Close")
+            .accessibilityLabel("Close \(item.name)")
 
             Button { engine.toggleKeep(item) } label: {
                 Image(systemName: kept ? "pin.fill" : "pin").font(.system(size: 10))
             }
             .buttonStyle(.borderless).disabled(locked)
             .help(kept ? "Stop protecting" : "Never close this")
+            .accessibilityLabel(kept ? "Stop protecting \(item.name)" : "Never close \(item.name)")
         }
         .foregroundStyle(.secondary)
     }
