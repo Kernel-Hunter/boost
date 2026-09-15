@@ -8,11 +8,25 @@ your Mac is actually doing, rather than a number engineered to make a button
 look worth pressing.
 
 ```bash
+brew install --cask kernel-hunter/boost/boost
+```
+
+Or build it yourself, which takes about as long and involves no Gatekeeper
+at all:
+
+```bash
 git clone https://github.com/Kernel-Hunter/boost.git
 cd boost && ./Scripts/build.sh
 ```
 
 macOS 14+. Builds with Command Line Tools — Xcode is not required.
+
+> **On signing.** Boost is signed with a local certificate, not notarized:
+> notarizing needs a paid Apple Developer account, and this is free software.
+> A direct download of the `.zip` will therefore be stopped by Gatekeeper, and
+> on recent macOS that is genuinely awkward to get past. The cask clears the
+> quarantine flag for you; building from source never sets one. Those are the
+> two paths worth using.
 
 ---
 
