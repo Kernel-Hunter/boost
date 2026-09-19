@@ -146,7 +146,7 @@ public struct ContentView: View {
             } else if !engine.showSystem {
                 Text("Nothing of yours is running.")
                     .foregroundStyle(.secondary)
-                Text("macOS's own processes are hidden — turn on **Show system processes** to see them.")
+                Text("macOS's own processes are hidden. Turn on **Show system processes** to see them.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
@@ -270,44 +270,42 @@ struct MemoryHeader: View {
 
             Spacer(minLength: 0)
 
-            VStack(alignment: .trailing, spacing: 8) {
+            VStack(alignment: .trailing, spacing: 10) {
                 Button {
-                    engine.quitSelected()
+                    engine.freeMemory()
                 } label: {
                     HStack(spacing: 7) {
-                        Image(systemName: "bolt.fill")
-                        Text(engine.busy ?? "Boost").fontWeight(.semibold)
+                        Image(systemName: "memorychip.fill")
+                        Text(engine.busy ?? "Free Memory").fontWeight(.semibold)
                     }
-                    .frame(minWidth: 116)
-                    .padding(.vertical, 7)
+                    .frame(minWidth: 168)
+                    .padding(.vertical, 9)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .keyboardShortcut(.return, modifiers: .command)
-                .disabled(engine.selectedItems.isEmpty || engine.busy != nil)
-                .help("Close everything ticked below, then drop the disk cache")
-
-                Text(engine.selectedItems.isEmpty
-                     ? "Nothing ticked"
-                     : "Closes \(engine.selectedItems.count) · frees ~\(fmtBytes(engine.selectedBytes))")
-                    .font(.caption2).foregroundStyle(.secondary)
-
-                Button {
-                    engine.freeMemory()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.down.left.and.arrow.up.right")
-                        Text("Free Memory")
-                    }
-                    .frame(minWidth: 116)
-                    .padding(.vertical, 4)
-                }
-                .controlSize(.regular)
                 .disabled(engine.busy != nil)
                 .accessibilityLabel("Free memory without closing anything")
-                .help("Reclaims memory your apps are holding but not using, without "
-                    + "closing anything. Needs no password. Stops on its own if your Mac "
-                    + "starts paging to disk.")
+                .help("Reclaims idle memory without closing apps or asking for a password. "
+                    + "Stops on its own if your Mac starts paging to disk.")
+
+                VStack(alignment: .leading, spacing: 7) {
+                    Label("Mem Reduct-style reclaim for macOS", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("It briefly asks macOS for memory so the system releases idle pages, then gives that request back. Apps stay open, swap is watched, and it stops before paging becomes the cost.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 8) {
+                        Label("No app closing", systemImage: "checkmark.circle")
+                        Label("No admin password", systemImage: "checkmark.circle")
+                    }
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                }
+                .padding(10)
+                .frame(width: 258, alignment: .leading)
+                .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 8))
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 18)
@@ -508,10 +506,10 @@ struct ItemRow: View {
 
             if hover.on { rowActions.transition(.opacity) }
 
-            Text(item.rssKnown ? fmtBytes(item.rssBytes) : "—")
+            Text(item.rssKnown ? fmtBytes(item.rssBytes) : "-")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(item.rssKnown ? .secondary : .tertiary)
-                .help(item.rssKnown ? "" : "Owned by root — macOS won't report its memory to us")
+                .help(item.rssKnown ? "" : "Owned by root, so macOS will not report its memory to us")
                 .frame(width: 74, alignment: .trailing)
 
             cpuMeter
@@ -551,7 +549,7 @@ struct ItemRow: View {
                 Image(systemName: item.isPaused ? "play.fill" : "pause.fill").font(.system(size: 10))
             }
             .buttonStyle(.borderless).disabled(locked)
-            .help(item.isPaused ? "Resume" : "Pause — freezes it at zero CPU, keeps its state")
+            .help(item.isPaused ? "Resume" : "Pause: freezes it at zero CPU and keeps its state")
             .accessibilityLabel(item.isPaused ? "Resume \(item.name)" : "Pause \(item.name)")
 
             Button { engine.quit(item); engine.refresh() } label: {
@@ -643,10 +641,10 @@ struct FooterBar: View {
                 Divider()
                 RuleMenuItems()
                 Divider()
-                Toggle("Purge disk cache after closing", isOn: $engine.purgeOnBoost)
+                Toggle("Also purge disk cache", isOn: $engine.purgeOnBoost)
                     .help("Asks for your admin password and drops macOS's disk "
                         + "cache. Makes free memory look higher and the Mac "
-                        + "briefly slower. Rarely worth it — off by default.")
+                        + "briefly slower. Rarely worth it, so it is off by default.")
                 Toggle("Resume everything when Boost quits", isOn: $engine.resumeOnQuit)
                 Divider()
                 Button("Force Quit Selected…") { engine.confirmForce = true }
@@ -814,8 +812,8 @@ struct FirstRunCard: View {
                 // instead of the bold. That mistake is invisible in code review
                 // and obvious in a screenshot.
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("**Pause** freezes an app at zero CPU and brings it back exactly as it was. **Close** quits it. Pausing is the reversible one.")
-                    Text("A big number in use is usually fine. **Swap** is what tells you your Mac has actually run out — at *no swap*, there is little to gain here.")
+                    Text("**Free Memory** is the main action. It is Boost's macOS answer to Mem Reduct: it asks macOS to reclaim idle pages, then gives the request back. It does not close apps.")
+                    Text("**Pause** and **Close** are optional process tools. Pause is reversible; Close quits apps. **Swap** is the number that tells you when memory pressure is real.")
                 }
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)

@@ -128,7 +128,7 @@ public final class Engine: ObservableObject {
         // Registration is first-come. Failing silently would be indistinguishable
         // from a broken keyboard, so say which it is.
         if !Hotkey.shared.isRegistered {
-            report("Could not claim ⌥⌘B — another app already holds it.")
+            report("Could not claim ⌥⌘B. Another app already holds it.")
         }
     }
 
@@ -314,7 +314,7 @@ public final class Engine: ObservableObject {
     func pauseSelected() {
         let targets = selectedItems.filter { !$0.isPaused }
         for item in targets { pause(item) }
-        report("Paused \(targets.count) \(targets.count == 1 ? "item" : "items") — zero CPU, state kept. Resume any time.")
+        report("Paused \(targets.count) \(targets.count == 1 ? "item" : "items"): zero CPU, state kept. Resume any time.")
         refresh()
     }
 
@@ -400,17 +400,17 @@ public final class Engine: ObservableObject {
         var text: String
 
         if outcome.refused {
-            text = "Not enough spare memory to do this safely — freeing works by "
+            text = "Not enough spare memory to do this safely. Freeing works by "
                  + "briefly asking for memory, and there is none to ask for. "
                  + "Close or pause something first."
         } else if outcome.freed >= 100 * 1_048_576 {
             text = "Freed \(fmtBytes(UInt64(outcome.freed)))."
             if outcome.stoppedOnSwap {
-                text += " Stopped early — your Mac started paging to disk, which "
+                text += " Stopped early: your Mac started paging to disk, which "
                       + "costs more than it returns."
             }
         } else if outcome.stoppedOnSwap {
-            text = "Stopped — your Mac started paging to disk straight away. "
+            text = "Stopped: your Mac started paging to disk straight away. "
                  + "There was nothing idle left to reclaim."
         } else {
             text = "Nothing to free. Your Mac was not holding anything back."

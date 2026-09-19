@@ -29,7 +29,7 @@ struct DiskView: View {
         HStack(alignment: .top, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(engine.scanning ? "—" : fmtBytes(engine.totalBytes))
+                    Text(engine.scanning ? "-" : fmtBytes(engine.totalBytes))
                         .font(.system(size: 34, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .kerning(-0.6)
@@ -78,7 +78,7 @@ struct DiskView: View {
         if engine.scanning { return "Measuring…" }
         if engine.targets.isEmpty { return "Nothing worth reclaiming." }
         return engine.selection.isEmpty
-            ? "Nothing ticked — pick what to remove."
+            ? "Nothing ticked. Pick what to remove."
             : "\(engine.selectedTargets.count) selected · \(fmtBytes(engine.selectedBytes))"
     }
 

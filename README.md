@@ -2,10 +2,10 @@
 
 A memory and disk utility for macOS that tells you the truth.
 
-Close apps, or **freeze them and bring them back** exactly as they were. Find
-disk space that is genuinely safe to reclaim. And read an honest account of what
-your Mac is actually doing, rather than a number engineered to make a button
-look worth pressing.
+Free memory without closing apps, freeze apps and bring them back exactly as
+they were, and find disk space that is genuinely safe to reclaim. Boost is the
+macOS answer to tools like Mem Reduct on Windows, built around what macOS
+actually allows rather than a fake cleaner number.
 
 ```bash
 brew install --cask kernel-hunter/boost/boost
@@ -19,7 +19,7 @@ git clone https://github.com/Kernel-Hunter/boost.git
 cd boost && ./Scripts/build.sh
 ```
 
-macOS 14+. Builds with Command Line Tools — Xcode is not required.
+macOS 14+. Builds with Command Line Tools. Xcode is not required.
 
 ![Boost's memory tab: 10.40 GB in use of 16.00 GB, a pressure sparkline, and a
 list of running apps grouped with their helper processes](docs/images/memory.png)
@@ -46,11 +46,33 @@ Boost is built the other way round:
 - **It explains what a figure means** before offering to change it. Cached
   memory is shown as available, because it is.
 - **It refuses the impressive-looking options.** The disk cleaner ignores your
-  Downloads folder and your iPhone backups — they would score well and they are
+  Downloads folder and your iPhone backups. They would score well and they are
   not safe.
-- **"Free memory" reports what actually happened**, including when the honest
-  answer is "the cache you dropped was already available, and your Mac is now
-  briefly slower".
+- **Free Memory is the primary action.** It asks macOS to reclaim idle pages,
+  watches swap while it runs, and tells you what actually happened.
+
+## Free Memory, compared with Mem Reduct
+
+Mem Reduct on Windows can call Windows memory-management APIs directly. macOS
+does not expose the same "trim every working set" switch to apps.
+
+Boost uses the safe macOS route instead: it briefly asks macOS for memory using
+Apple's own `memory_pressure` tool, which nudges the system to release idle
+pages and compress what can be compressed. Boost then gives that request back,
+checks the before and after readings, and reports only the memory that stopped
+being used.
+
+That means:
+
+- It does not close apps.
+- It does not delete files.
+- It does not need your admin password.
+- It stops early if swap starts growing, because paging to disk would cost more
+  than the reclaim is worth.
+
+This does not harm the Mac. It uses a system tool shipped by Apple, keeps the run
+short, and stops when the safety checks say the Mac has no cheap memory left to
+give back.
 
 ## What it does
 
@@ -58,20 +80,22 @@ Boost is built the other way round:
 
 | | | Reversible |
 | --- | --- | --- |
+| **Free Memory** | Reclaims idle memory through macOS without closing apps. This is the main feature. | No app state changes |
 | **Pause** | `SIGSTOP`s an app and every helper it spawned. Zero CPU, state kept in place, and macOS is free to swap its pages out. | **Yes** |
 | **Close** | Quits it properly. Unsaved work prompts you first. | No |
-| **Free memory** | Drops macOS's disk cache. Asks for your password. Rarely the right answer. | No |
+| **Purge disk cache** | Optional advanced setting. Asks for your password and is rarely the right answer. | No |
 
-**Pause is the interesting one.** Freeze what you are not using, do your heavy
-work, hit Resume All, and everything comes back mid-scroll. Resume All sweeps
-the whole system, so nothing can be stranded frozen if Boost crashes or is
-quit.
+**Free Memory is the main button.** It is for the moment your Mac feels heavy
+but you do not want to close your work. Pause is the reversible backup plan:
+freeze what you are not using, do your heavy work, hit Resume All, and
+everything comes back mid-scroll. Resume All sweeps the whole system, so nothing
+can be stranded frozen if Boost crashes or is quit.
 
-An app and all its helpers count as one row — a browser is one entry with its
+An app and all its helpers count as one row. A browser is one entry with its
 real total, not thirty mystery processes.
 
 A **sparkline and a sentence** say which way memory has been going, and a badge
-names any app whose floor keeps rising — the shape of a leak, which is
+names any app whose floor keeps rising, the shape of a leak, which is
 invisible in a single reading. Big is not the signal; a browser is supposed to
 be big.
 
@@ -86,7 +110,7 @@ What it will not touch is the point:
 - Your **Downloads** folder
 - Any project's **node_modules**
 - **iOS device backups**
-- Anything behind a privacy prompt — it skips Music, Photos and Safari caches
+- Anything behind a privacy prompt. It skips Music, Photos and Safari caches
   rather than ask for access to your media library, because a disk cleaner that
   asks for that is indistinguishable from the ones that deserve the suspicion
 
@@ -104,10 +128,10 @@ this destroy data; there is a test that builds exactly that trap.
 ### Elsewhere
 
 - **Menu bar** readout, showing the number only when it is worth reading
-- **⌥⌘B** from any app (off by default — claiming a system-wide shortcut is not
+- **⌥⌘B** from any app (off by default, because claiming a system-wide shortcut is not
   something an app should help itself to)
 - **Close button quits the app**, for apps that stay running with no windows
-- **Warn me when swap climbs** — tells you, and can pause what is ticked. It
+- **Warn me when swap climbs**: tells you, and can pause what is ticked. It
   can never close anything, and a test enforces that
 
 ## Permissions
@@ -117,7 +141,7 @@ this destroy data; there is a test that builds exactly that trap.
 | None | Reading the process table, memory stats, and signalling your own apps | Always |
 | Accessibility | Counting an app's open windows | Only for "close button quits the app" |
 | Notifications | The swap warning | Only if you enable it |
-| Admin password | `/usr/sbin/purge` | Only if you press Free memory |
+| Admin password | `/usr/sbin/purge` | Only if you enable the optional disk-cache purge |
 
 No analytics, no telemetry, no update check, no network access of any kind.
 There is nothing to opt out of. See [SECURITY.md](SECURITY.md).
@@ -144,14 +168,14 @@ file.
 ./Scripts/test.sh           # run the suite
 ```
 
-Use `Scripts/test.sh` rather than `swift test` — see
+Use `Scripts/test.sh` rather than `swift test`. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the two flags it needs and why their
 error messages blame the wrong thing.
 
 ## Is it free
 
 Yes, and the parts that matter always will be. Safety, honest readings, and
-anything that already shipped free are not going behind a paywall — see the
+anything that already shipped free are not going behind a paywall. See the
 rules written into [`Pro.swift`](Sources/BoostKit/Pro.swift). If a paid tier
 ever appears it will be for things that cost something to run, and the commit
 that introduces it will say so plainly.
