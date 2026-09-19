@@ -39,7 +39,7 @@ enum Category: Int, CaseIterable, Identifiable {
         case .app:    return "Apps with windows"
         case .agent:  return "No windows, still running"
         case .widget: return "Desktop and Notification Centre widgets"
-        case .system: return "macOS internals — leave these alone unless you know why"
+        case .system: return "macOS internals. Leave these alone unless you know why"
         }
     }
 }

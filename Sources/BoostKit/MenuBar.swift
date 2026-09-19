@@ -67,12 +67,17 @@ public struct MenuBarContent: View {
         // not an instruction.
         Text("\(fmtBytes(engine.mem.used)) of \(fmtBytes(engine.mem.total)) in use")
         Text(engine.mem.swapUsed == 0
-             ? "No swap — your Mac is coping"
-             : "\(fmtBytes(engine.mem.swapUsed)) swap — this is the number that matters")
+             ? "No swap: your Mac is coping"
+             : "\(fmtBytes(engine.mem.swapUsed)) swap: this is the number that matters")
 
         Divider()
 
-        Button("Close \(engine.selectedItems.count) and reclaim ~\(fmtBytes(engine.selectedBytes))") {
+        Button("Free memory") { engine.freeMemory() }
+            .disabled(engine.busy != nil)
+
+        Divider()
+
+        Button("Close selected apps (\(engine.selectedItems.count))") {
             engine.quitSelected()
         }
         .disabled(engine.selectedItems.isEmpty || engine.busy != nil)
@@ -85,11 +90,6 @@ public struct MenuBarContent: View {
         if !engine.pausedItems.isEmpty {
             Button("Resume All (\(engine.pausedItems.count))") { engine.resumeEverything() }
         }
-
-        Divider()
-
-        Button("Free memory…") { engine.freeMemory() }
-            .disabled(engine.busy != nil)
 
         Divider()
 

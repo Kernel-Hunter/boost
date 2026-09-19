@@ -40,7 +40,7 @@ public enum DiskScan {
             CleanupTarget(
                 id: "trash", name: "Trash",
                 detail: "Files you already deleted. This is the only entry here that is not "
-                      + "regenerable — if something in the Trash still matters, take it out first.",
+                      + "regenerable. If something in the Trash still matters, take it out first.",
                 paths: [h.appending(path: ".Trash")],
                 regenerates: false),
 
@@ -99,7 +99,7 @@ public enum DiskScan {
 
             CleanupTarget(
                 id: "app-caches", name: "Application caches",
-                detail: "What apps keep under ~/Library/Caches so they need not redo work — "
+                detail: "What apps keep under ~/Library/Caches so they need not redo work. "
                       + "thumbnails, decoded images, fetched data. Apps rebuild it. Some will "
                       + "feel slow once, and a few may want signing in to again.",
                 paths: [h.appending(path: "Library/Caches")],
