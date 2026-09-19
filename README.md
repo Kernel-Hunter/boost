@@ -184,4 +184,4 @@ that introduces it will say so plainly.
 
 GPL-3.0. See [LICENSE](LICENSE).
 
-Built by [Karim Masmoudi](https://github.com/Kernel-Hunter), with Claude.
+Built by [Karim Masmoudi](https://github.com/Kernel-Hunter).
