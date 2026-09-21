@@ -15,9 +15,24 @@ public final class Engine: ObservableObject {
     /// for why: @AppStorage inside an ObservableObject doesn't reliably publish,
     /// and visibleItems (which reads this) needs to recompute when it changes.
     @Published var showSystem: Bool = UserDefaults.standard.bool(forKey: "showSystem") {
-        didSet { UserDefaults.standard.set(showSystem, forKey: "showSystem") }
+        didSet {
+            UserDefaults.standard.set(showSystem, forKey: "showSystem")
+            // Switching this on is the one moment its whole point is to see
+            // the result. Left collapsed, turning it on reveals a single
+            // header row with a count and nothing else — indistinguishable,
+            // at a glance, from the toggle not doing anything at all.
+            if showSystem { expanded.insert(Category.system.rawValue) }
+        }
     }
-    @Published var expanded: Set<Int> = [Category.app.rawValue, Category.agent.rawValue]
+    // System starts expanded too when the toggle was already on from a
+    // previous launch — didSet on showSystem only fires on a change, not on
+    // this initial load, so without this a returning "on" setting would
+    // stay collapsed until toggled off and on again.
+    @Published var expanded: Set<Int> = {
+        var base: Set<Int> = [Category.app.rawValue, Category.agent.rawValue]
+        if UserDefaults.standard.bool(forKey: "showSystem") { base.insert(Category.system.rawValue) }
+        return base
+    }()
     @Published var search = ""
     @Published var lastReport: String?
     @Published var busy: String?
