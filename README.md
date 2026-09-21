@@ -22,6 +22,8 @@ cd boost && ./Scripts/build.sh
 macOS 14+, Apple Silicon and Intel — every build is universal, one binary for
 both. Builds with Command Line Tools. Xcode is not required.
 
+[![Watch the 19-second demo](https://github.com/Kernel-Hunter/boost/releases/download/v1.1.0/brag.jpg)](https://github.com/Kernel-Hunter/boost/releases/download/v1.1.0/brag.mp4)
+
 ![Boost's memory tab: a radial pressure gauge, 11.56 GB in use of 16.00 GB, and
 a card list of running apps grouped with their helper processes](docs/images/memory.png)
 
