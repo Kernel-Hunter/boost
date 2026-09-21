@@ -81,6 +81,15 @@ public final class Engine: ObservableObject {
     /// on your behalf by default.
     @AppStorage("purgeOnBoost") var purgeOnBoost = false
 
+    /// Off by default, and only ever turned on by hand in Settings. `warn`
+    /// asks the kernel to reclaim idle pages; `critical` pushes further —
+    /// enough that it can occasionally be the reason the kernel decides to
+    /// kill something itself, on its own schedule, with no dialog from
+    /// Boost. The swap-growth abort still runs exactly as it does at the
+    /// safe level; what changes is that this can escalate past the point
+    /// that abort is guaranteed to catch in time.
+    @AppStorage("aggressiveReclaim") var aggressiveReclaim = false
+
     private var timer: Timer?
     /// Things the user has explicitly unticked. Without this, newly launched apps
     /// could never be auto-ticked without also re-ticking what you just cleared.
@@ -429,10 +438,11 @@ public final class Engine: ObservableObject {
         guard busy == nil else { return }
         busy = "Freeing…"
         let alsoPurge = purgeOnBoost
+        let level = aggressiveReclaim ? "critical" : "warn"
 
         Task {
             let outcome = await Task.detached(priority: .userInitiated) {
-                Reclaim.runSeries()
+                Reclaim.runSeries(launch: { Reclaim.defaultLaunch(level: level) })
             }.value
 
             var purgeNote = ""

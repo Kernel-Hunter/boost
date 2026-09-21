@@ -84,7 +84,22 @@ public struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 960, minHeight: 600)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background {
+            // A flat system background is what made this read as "yet
+            // another SwiftUI utility" regardless of what sat on top of
+            // it. A dark radial wash with a hint of the brand color,
+            // centred behind the gauge, gives the whole window a source
+            // of light instead of a uniform gray field.
+            ZStack {
+                Color(nsColor: .windowBackgroundColor)
+                RadialGradient(
+                    colors: [Color.brand.opacity(0.10), Color.clear],
+                    center: UnitPoint(x: 0.28, y: 0.05),
+                    startRadius: 0, endRadius: 480
+                )
+            }
+            .ignoresSafeArea()
+        }
         .overlay(alignment: .bottom) {
             if let report = disk.report, tabs.tab == .disk {
                 Toast(text: report).padding(.bottom, 76)
@@ -96,7 +111,6 @@ public struct ContentView: View {
     private var memoryTab: some View {
         VStack(spacing: 0) {
             MemoryHeader(engine: engine)
-            Divider().opacity(0.5)
             FilterBar(engine: engine)
             Divider().opacity(0.5)
             if engine.needsAccessibility { AccessibilityBanner(engine: engine) }
@@ -405,8 +419,14 @@ struct MemoryHeader: View {
                 }
             }
         }
-        .padding(.horizontal, 22).padding(.vertical, 18)
-        .background(.regularMaterial)
+        .padding(.horizontal, 22).padding(.vertical, 20)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
+        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
     }
 }
 
@@ -794,22 +814,15 @@ struct FooterBar: View {
                 .disabled(engine.selectedItems.isEmpty || engine.busy != nil)
 
             Menu {
-                Toggle("Close button quits the app", isOn: $engine.autoQuitOnClose)
-                Toggle("Global shortcut (⌥⌘B)", isOn: $engine.globalHotkey)
-                    .help("Opens Boost and closes what is ticked, from any app.")
-                Divider()
-                RuleMenuItems()
-                Divider()
-                Toggle("Also purge disk cache", isOn: $engine.purgeOnBoost)
-                    .help("Asks for your admin password and drops macOS's disk "
-                        + "cache. Makes free memory look higher and the Mac "
-                        + "briefly slower. Rarely worth it, so it is off by default.")
-                Toggle("Resume everything when Boost quits", isOn: $engine.resumeOnQuit)
-                Divider()
                 Button("Force Quit Selected…") { engine.confirmForce = true }
                     .disabled(engine.selectedItems.isEmpty)
                 Button("Refresh Now") { engine.refresh() }
                     .keyboardShortcut("r", modifiers: .command)
+                Divider()
+                SettingsLink {
+                    Text("Settings…")
+                }
+                .keyboardShortcut(",", modifiers: .command)
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -902,38 +915,6 @@ struct Sparkline: View {
     }
 }
 
-
-// MARK: - Rules
-
-/// The automation settings, in the overflow menu beside the other switches.
-struct RuleMenuItems: View {
-    @ObservedObject private var rules = Rules.shared
-
-    var body: some View {
-        Toggle("Warn me when swap climbs", isOn: Binding(
-            get: { rules.enabled },
-            set: { on in
-                rules.enabled = on
-                // Asking for notification permission belongs to the moment you
-                // switch this on, not to app launch and not to a property setter.
-                if on { rules.requestPermission() }
-            }
-        ))
-        .help("Swap is the number that means your Mac has actually run out, "
-            + "rather than merely being busy.")
-
-        if rules.enabled {
-            Picker("Past", selection: $rules.swapThresholdGB) {
-                Text("1 GB of swap").tag(1.0)
-                Text("2 GB of swap").tag(2.0)
-                Text("4 GB of swap").tag(4.0)
-            }
-            Picker("Then", selection: $rules.action) {
-                ForEach(RuleAction.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-        }
-    }
-}
 
 // MARK: - First run
 

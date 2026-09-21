@@ -6,9 +6,19 @@ struct DiskView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().opacity(0.5)
             content
             footer
+        }
+        .background {
+            ZStack {
+                Color(nsColor: .windowBackgroundColor)
+                RadialGradient(
+                    colors: [Color.brand.opacity(0.08), Color.clear],
+                    center: UnitPoint(x: 0.12, y: 0.1),
+                    startRadius: 0, endRadius: 420
+                )
+            }
+            .ignoresSafeArea()
         }
         .confirmationDialog("Delete \(fmtBytes(engine.selectedBytes))?",
                             isPresented: $engine.confirming) {
@@ -82,8 +92,14 @@ struct DiskView: View {
                 .disabled(engine.scanning || engine.cleaning)
             }
         }
-        .padding(.horizontal, 22).padding(.vertical, 18)
-        .background(.regularMaterial)
+        .padding(.horizontal, 22).padding(.vertical, 20)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
+        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
     }
 
     private var subtitle: String {
