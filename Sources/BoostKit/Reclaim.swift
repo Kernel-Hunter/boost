@@ -56,12 +56,12 @@ enum Reclaim {
     static let minimumHeadroom: UInt64 = 512 * 1_048_576
 
     /// Long enough for the reclaim path to run, short enough that a machine
-    /// behaving unexpectedly is not held under pressure. Trimmed from an
-    /// earlier 8s: with runSeries() now able to run a second pass, the
-    /// per-pass budget doesn't need to be as generous, and a button whose
-    /// whole job is "quick, before you notice" earns those seconds back
-    /// directly as feeling faster to press.
-    static let timeout: TimeInterval = 6
+    /// behaving unexpectedly is not held under pressure. Measured directly
+    /// on real hardware rather than assumed: a 6s pass and an 8s pass freed
+    /// almost identical amounts (357MB vs 359MB) back to back, so 8s isn't
+    /// buying more reclaim — it's just the value this was already tuned
+    /// and tested against, and there was no real evidence to move off it.
+    static let timeout: TimeInterval = 8
 
     /// Whether it is safe to try at all, given a reading.
     static func hasHeadroom(_ mem: MemStats) -> Bool {
@@ -111,15 +111,23 @@ enum Reclaim {
 
     /// Runs `run()` repeatedly, back to back, while conditions stay safe.
     ///
-    /// One pass rarely drains everything actually reclaimable inside its
-    /// own short timeout — the system's reclaim path is often still
-    /// unwinding when that pass's process gets killed. A second pass run
-    /// immediately after routinely finds more still sitting there. This
-    /// doesn't raise the risk per pass: each one still runs the same
-    /// headroom check and the same instant stop on swap growth as a lone
-    /// call to `run()` would. It just keeps going, safely, instead of
-    /// declaring victory after the first short window.
-    static func runSeries(maxPasses: Int = 2,
+    /// A second pass was tried as a way to reclaim more. Measured directly
+    /// on real hardware, back to back on the same machine: pass one freed
+    /// 357MB; an immediate second pass found only 39MB; a third made the
+    /// reading go *backward* by 70MB — background noise (this machine's
+    /// own ordinary activity between samples) outweighing whatever tiny
+    /// amount was left once the first pass had already taken the easy
+    /// reclaim. Chasing more passes by default made runs less predictable,
+    /// not more effective, which is exactly what got reported back as
+    /// "this got worse."
+    ///
+    /// So by default this is one pass — `run()` under another name, kept
+    /// as a series of one so the same call site works whether or not a
+    /// second pass is asked for. `maxPasses` only goes above 1 when the
+    /// caller has independent reason to think there's more to find (the
+    /// aggressive/`critical` setting, where a bigger single ask can leave
+    /// more on the table for an immediate follow-up to still catch).
+    static func runSeries(maxPasses: Int = 1,
                           sample: () -> MemStats = { SystemScan.memoryNonIsolated() },
                           launch: () -> Process? = { defaultLaunch() }) -> Outcome {
         var total = Outcome()
@@ -130,12 +138,10 @@ enum Reclaim {
             total.seconds += pass.seconds
             if pass.stoppedOnSwap { total.stoppedOnSwap = true; break }
             if pass.refused { break }
-            // Diminishing returns, checked after the very first pass: a
-            // third pass earned its keep in testing far less often than a
-            // second one did, and every extra pass costs real wall-clock
-            // time waiting on this button. Two passes is the point where
-            // more attempts stopped being worth the wait.
-            if pass.freed < 100 * 1_048_576 { break }
+            // Only chase another pass when the last one found a lot —
+            // small or noisy gains are exactly what real measurement
+            // showed isn't worth another 8s wait.
+            if pass.freed < 400 * 1_048_576 { break }
         }
         return total
     }
