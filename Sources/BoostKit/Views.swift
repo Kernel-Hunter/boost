@@ -632,7 +632,12 @@ struct FooterBar: View {
                 engine.quitSelected()
             } label: { Label("Close", systemImage: "xmark") }
                 .controlSize(.large)
-                .disabled(engine.selectedItems.isEmpty)
+                // Closing and Free Memory share one `busy` flag on Engine, so
+                // starting Close while a Free Memory run is still in flight
+                // (or the reverse) lets one overwrite the other's status text
+                // and clear it early. The menu bar's Close button already
+                // guards this; this one didn't.
+                .disabled(engine.selectedItems.isEmpty || engine.busy != nil)
 
             Menu {
                 Toggle("Close button quits the app", isOn: $engine.autoQuitOnClose)

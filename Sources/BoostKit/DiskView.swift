@@ -67,7 +67,11 @@ struct DiskView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .disabled(engine.scanning)
+                // Clean already re-scans when it finishes (see DiskEngine.clean);
+                // a manual rescan started mid-clean would race that one and get
+                // silently dropped by scan()'s own re-entrancy guard, leaving the
+                // list stale with nothing telling you why.
+                .disabled(engine.scanning || engine.cleaning)
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 18)
