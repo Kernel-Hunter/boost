@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 
 # One place. The release workflow reads it from here rather than being told
 # separately, so a tag and a bundle cannot disagree about what they are.
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 DEST="/Applications/Boost.app"
 BUILD="build.noindex"
