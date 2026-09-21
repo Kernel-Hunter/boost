@@ -134,6 +134,80 @@ struct ReclaimTests {
     }
 }
 
+/// Free Memory used to stop after one short pass, which routinely left
+/// memory on the table that a second pass would have caught mid-unwind.
+/// These tests are about the orchestration on top of `run()` — the safety
+/// behaviour itself (headroom, swap, timeout) is already covered above and
+/// unchanged; a series is just that same, already-tested unit of work,
+/// repeated while it keeps paying off.
+@Suite("Reclaim series")
+struct ReclaimSeriesTests {
+
+    private func mem(freeGB: Double = 2, cachedGB: Double = 2,
+                     swapGB: Double = 0, usedGB: Double = 10) -> MemStats {
+        var m = MemStats()
+        m.total = 16 * 1_073_741_824
+        m.free = UInt64(freeGB * 1_073_741_824)
+        m.cached = UInt64(cachedGB * 1_073_741_824)
+        m.swapUsed = UInt64(swapGB * 1_073_741_824)
+        m.used = UInt64(usedGB * 1_073_741_824)
+        return m
+    }
+
+    private func sleeper(seconds: Double) -> Process {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/sleep")
+        p.arguments = ["\(seconds)"]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        try? p.run()
+        return p
+    }
+
+    @Test("Sums what multiple passes freed, rather than reporting only the first")
+    func accumulatesAcrossPasses() {
+        var usedGB = 10.0
+        let outcome = Reclaim.runSeries(
+            maxPasses: 3,
+            sample: { [self] in
+                defer { usedGB -= 0.5 }
+                return mem(usedGB: usedGB)
+            },
+            launch: { self.sleeper(seconds: 0.1) })
+        // Headroom and swap stay fine throughout, and every reading frees
+        // more than the last, so all three passes should run — reporting
+        // more, together, than any single one of them could alone.
+        #expect(outcome.freed > 2 * 1_073_741_824,
+                "three passes should sum to more than one pass's worth")
+    }
+
+    @Test("Swap growing on any pass stops the whole series, not just that pass")
+    func swapGrowthStopsTheSeries() {
+        var launches = 0
+        var callCount = 0
+        let outcome = Reclaim.runSeries(
+            maxPasses: 5,
+            sample: { [self] in
+                callCount += 1
+                return mem(swapGB: Double(callCount) * 0.2)   // keeps climbing every reading
+            },
+            launch: { launches += 1; return self.sleeper(seconds: 0.3) })
+        #expect(outcome.stoppedOnSwap)
+        #expect(launches == 1, "should not attempt a second pass once swap started climbing")
+    }
+
+    @Test("A refusal on the very first pass stops the whole series")
+    func refusalStopsTheSeries() {
+        var launches = 0
+        let outcome = Reclaim.runSeries(
+            maxPasses: 3,
+            sample: { self.mem(freeGB: 0.05, cachedGB: 0.05) },
+            launch: { launches += 1; return self.sleeper(seconds: 0.1) })
+        #expect(outcome.refused)
+        #expect(launches == 0, "nothing should be started when the first pass already refused")
+    }
+}
+
 /// What it says afterwards matters as much as what it does. Reporting a
 /// flattering number for a thing that did not happen is the house style of the
 /// category this app is trying not to be part of.

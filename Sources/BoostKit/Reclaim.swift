@@ -105,6 +105,34 @@ enum Reclaim {
         return outcome
     }
 
+    /// Runs `run()` repeatedly, back to back, while conditions stay safe.
+    ///
+    /// One pass rarely drains everything actually reclaimable inside its
+    /// own short timeout — the system's reclaim path is often still
+    /// unwinding when that pass's process gets killed. A second pass run
+    /// immediately after routinely finds more still sitting there. This
+    /// doesn't raise the risk per pass: each one still runs the same
+    /// headroom check and the same instant stop on swap growth as a lone
+    /// call to `run()` would. It just keeps going, safely, instead of
+    /// declaring victory after the first short window.
+    static func runSeries(maxPasses: Int = 3,
+                          sample: () -> MemStats = { SystemScan.memoryNonIsolated() },
+                          launch: () -> Process? = defaultLaunch) -> Outcome {
+        var total = Outcome()
+        for i in 0..<maxPasses {
+            let pass = run(sample: sample, launch: launch)
+            if i == 0 { total.refused = pass.refused }
+            total.freed += pass.freed
+            total.seconds += pass.seconds
+            if pass.stoppedOnSwap { total.stoppedOnSwap = true; break }
+            if pass.refused { break }
+            // Diminishing returns: another pass right now would just spend
+            // time allocating into memory that's already gone.
+            if pass.freed < 50 * 1_048_576 { break }
+        }
+        return total
+    }
+
     static func defaultLaunch() -> Process? {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/memory_pressure")
