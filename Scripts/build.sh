@@ -28,17 +28,19 @@ mkdir -p "$BUILD"
 # doesn't run slower on an Intel Mac, it doesn't run at all: Rosetta
 # translates x86_64 to arm64, never the other way.
 #
-# Built as two single-arch passes and merged with lipo, rather than the
-# one-line `swift build --arch arm64 --arch x86_64`: passing --arch twice in
-# one invocation switches SwiftPM to Xcode's XCBuild underneath, which needs
-# Xcode itself installed. One --arch at a time stays on SwiftPM's own build
-# system, which is the whole reason this only needs Command Line Tools.
-for arch in arm64 x86_64; do
-  swift build -c release --product boost --arch "$arch"
-done
-lipo -create -output "$BUILD/Boost" \
-  "$(swift build -c release --product boost --arch arm64  --show-bin-path)/boost" \
-  "$(swift build -c release --product boost --arch x86_64 --show-bin-path)/boost"
+# One invocation with two --arch flags, which SwiftPM merges into a single
+# fat binary itself. An earlier version of this script ran two separate
+# single-arch builds and merged them with lipo by hand, on the theory that
+# passing --arch twice forces Xcode's XCBuild underneath. On the Swift 6.4
+# toolchain shipping with current Command Line Tools that theory is simply
+# wrong — swiftbuild is the default build system either way, no Xcode is
+# involved, and it works with Command Line Tools alone. It's also the only
+# option that still works there: that toolchain's --show-bin-path resolves
+# to the same shared output directory regardless of --arch, so two separate
+# single-arch builds silently overwrote each other before lipo ever ran.
+swift build -c release --product boost --arch arm64 --arch x86_64
+BIN_PATH="$(swift build -c release --product boost --arch arm64 --arch x86_64 --show-bin-path)"
+cp "$BIN_PATH/boost" "$BUILD/Boost"
 
 # A universal build that silently narrowed to one slice would fail on
 # exactly the machine this is meant to cover, and do it quietly. Checked
