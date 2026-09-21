@@ -56,8 +56,12 @@ enum Reclaim {
     static let minimumHeadroom: UInt64 = 512 * 1_048_576
 
     /// Long enough for the reclaim path to run, short enough that a machine
-    /// behaving unexpectedly is not held under pressure.
-    static let timeout: TimeInterval = 8
+    /// behaving unexpectedly is not held under pressure. Trimmed from an
+    /// earlier 8s: with runSeries() now able to run a second pass, the
+    /// per-pass budget doesn't need to be as generous, and a button whose
+    /// whole job is "quick, before you notice" earns those seconds back
+    /// directly as feeling faster to press.
+    static let timeout: TimeInterval = 6
 
     /// Whether it is safe to try at all, given a reading.
     static func hasHeadroom(_ mem: MemStats) -> Bool {
@@ -115,7 +119,7 @@ enum Reclaim {
     /// headroom check and the same instant stop on swap growth as a lone
     /// call to `run()` would. It just keeps going, safely, instead of
     /// declaring victory after the first short window.
-    static func runSeries(maxPasses: Int = 3,
+    static func runSeries(maxPasses: Int = 2,
                           sample: () -> MemStats = { SystemScan.memoryNonIsolated() },
                           launch: () -> Process? = defaultLaunch) -> Outcome {
         var total = Outcome()
@@ -126,9 +130,12 @@ enum Reclaim {
             total.seconds += pass.seconds
             if pass.stoppedOnSwap { total.stoppedOnSwap = true; break }
             if pass.refused { break }
-            // Diminishing returns: another pass right now would just spend
-            // time allocating into memory that's already gone.
-            if pass.freed < 50 * 1_048_576 { break }
+            // Diminishing returns, checked after the very first pass: a
+            // third pass earned its keep in testing far less often than a
+            // second one did, and every extra pass costs real wall-clock
+            // time waiting on this button. Two passes is the point where
+            // more attempts stopped being worth the wait.
+            if pass.freed < 100 * 1_048_576 { break }
         }
         return total
     }

@@ -26,15 +26,23 @@ struct DiskView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 24) {
+        HStack(alignment: .center, spacing: 22) {
+            ZStack {
+                Circle().fill(Color.brand.opacity(0.14))
+                Image(systemName: "internaldrive.fill")
+                    .font(.system(size: 26))
+                    .foregroundStyle(Color.brand.gradient)
+            }
+            .frame(width: 72, height: 72)
+
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(engine.scanning ? "-" : fmtBytes(engine.totalBytes))
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        .font(.system(size: 30, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .kerning(-0.6)
                         .contentTransition(.numericText())
-                    Text("reclaimable").font(.title3).foregroundStyle(.secondary)
+                    Text("reclaimable").font(.system(size: 14)).foregroundStyle(.secondary)
                 }
                 Text(subtitle)
                     .font(.caption)
@@ -111,6 +119,7 @@ struct DiskView: View {
                     DiskRow(engine: engine, target: target)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
             }
             .listStyle(.plain)
@@ -191,10 +200,19 @@ private struct DiskRow: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 78, alignment: .trailing)
         }
-        .padding(.horizontal, 22).padding(.vertical, 10)
-        .background(hover.on ? Color.primary.opacity(0.045) : .clear)
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
+        }
+        .padding(.horizontal, 22).padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
         .onTapGesture { engine.toggle(target) }
+        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
     }
 }
