@@ -439,10 +439,15 @@ public final class Engine: ObservableObject {
         busy = "Freeing…"
         let alsoPurge = purgeOnBoost
         let level = aggressiveReclaim ? "critical" : "warn"
+        // A second pass only when running the more aggressive level: that's
+        // the one case where a single ask plausibly leaves enough behind
+        // for an immediate follow-up to still find something real, rather
+        // than mostly just re-measuring the same machine noise.
+        let maxPasses = aggressiveReclaim ? 2 : 1
 
         Task {
             let outcome = await Task.detached(priority: .userInitiated) {
-                Reclaim.runSeries(launch: { Reclaim.defaultLaunch(level: level) })
+                Reclaim.runSeries(maxPasses: maxPasses, launch: { Reclaim.defaultLaunch(level: level) })
             }.value
 
             var purgeNote = ""

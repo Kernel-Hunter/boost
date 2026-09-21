@@ -181,6 +181,21 @@ struct ReclaimSeriesTests {
                 "three passes should sum to more than one pass's worth")
     }
 
+    /// Regression: a default of multiple passes measured worse in practice
+    /// than a single pass did — real back-to-back testing on real hardware
+    /// found a second pass mostly just adding noise (see runSeries's own
+    /// doc comment for the numbers), which is what got reported back as
+    /// "this got worse than before." The default has to stay a single pass
+    /// unless a caller explicitly asks for more.
+    @Test("Defaults to a single pass when the caller doesn't ask for more")
+    func defaultsToOnePass() {
+        var launches = 0
+        _ = Reclaim.runSeries(
+            sample: { self.mem(usedGB: 10) },   // never dips below the continue threshold
+            launch: { launches += 1; return self.sleeper(seconds: 0.1) })
+        #expect(launches == 1, "a caller that didn't ask for more than one pass should only get one")
+    }
+
     @Test("Swap growing on any pass stops the whole series, not just that pass")
     func swapGrowthStopsTheSeries() {
         var launches = 0
