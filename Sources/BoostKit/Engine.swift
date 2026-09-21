@@ -105,6 +105,7 @@ public final class Engine: ObservableObject {
     /// startup is hostile).
     func applyAutoQuit(requesting: Bool) {
         WindowWatcher.shared.keepList = { Engine.shared.keepList }
+        WindowWatcher.shared.canQuitNow = { Engine.shared.busy == nil }
         if autoQuitOnClose, !WindowWatcher.hasPermission, requesting {
             WindowWatcher.requestPermission()
         }
@@ -331,6 +332,13 @@ public final class Engine: ObservableObject {
     }
 
     func quitSelected(force: Bool = false) {
+        // Guarded here, not just at each button: Free Memory and Close both
+        // take a before/after memory reading around their own work, and
+        // running one mid-way through the other skews both readings. The
+        // footer and menu bar buttons already disable themselves on `busy`,
+        // but the global hotkey calls straight into this function and
+        // bypasses that — so the real guard has to live here.
+        guard busy == nil else { return }
         let targets = selectedItems
         guard !targets.isEmpty else { return }
         let before = SystemScan.memory()
