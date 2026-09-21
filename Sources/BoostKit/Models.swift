@@ -44,6 +44,30 @@ enum Category: Int, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Sorting
+
+/// How the process list within each category is ordered. Size-descending was
+/// the only option before this — fixed at the point items were built, with
+/// no way to ask for anything else.
+enum SortOption: String, CaseIterable, Identifiable {
+    case size, name, cpu
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .size: return "Memory"
+        case .name: return "Name"
+        case .cpu:  return "CPU"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .size: return "memorychip"
+        case .name: return "textformat"
+        case .cpu:  return "cpu"
+        }
+    }
+}
+
 // MARK: - A thing the user can act on
 
 struct Item: Identifiable, Equatable {
@@ -143,4 +167,10 @@ func fmtBytes(_ b: UInt64) -> String {
     let mb = Double(b) / 1_048_576
     if mb >= 1 { return String(format: "%.0f MB", mb) }
     return "\(b) B"
+}
+
+/// One decimal under 10%, where an idle Mac's real activity actually lives —
+/// rounding 0.1–9.9% down to a flat integer made almost every row read "0%".
+func fmtCPU(_ percent: Double) -> String {
+    percent < 10 ? String(format: "%.1f%%", percent) : "\(Int(percent))%"
 }

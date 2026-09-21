@@ -33,6 +33,13 @@ public final class Engine: ObservableObject {
         if UserDefaults.standard.bool(forKey: "showSystem") { base.insert(Category.system.rawValue) }
         return base
     }()
+    @Published var sortOption: SortOption =
+        SortOption(rawValue: UserDefaults.standard.string(forKey: "sortOption") ?? "") ?? .size {
+        didSet { UserDefaults.standard.set(sortOption.rawValue, forKey: "sortOption") }
+    }
+    @Published var sortAscending: Bool = UserDefaults.standard.bool(forKey: "sortAscending") {
+        didSet { UserDefaults.standard.set(sortAscending, forKey: "sortAscending") }
+    }
     @Published var search = ""
     @Published var lastReport: String?
     @Published var busy: String?
@@ -152,6 +159,7 @@ public final class Engine: ObservableObject {
         mem = SystemScan.memory()
         history.record(MemorySample(at: Date(), used: mem.used, cached: mem.cached,
                                     swap: mem.swapUsed, pressure: mem.pressure))
+        updateDockBadge()
         if autoQuitOnClose {                       // you may grant access while we run
             let granted = WindowWatcher.hasPermission
             if needsAccessibility == granted { applyAutoQuit(requesting: false) }
@@ -166,6 +174,15 @@ public final class Engine: ObservableObject {
         for item in defaultSelectable where !userDeselected.contains(item.id) {
             selection.insert(item.id)
         }
+    }
+
+    /// Puts memory pressure on the Dock icon — the one place it's visible
+    /// without opening the app or hunting for the menu bar item at all.
+    /// Same restraint as the menu bar readout: silent while things are
+    /// fine, because a badge that's always there stops meaning anything.
+    private func updateDockBadge() {
+        NSApplication.shared.dockTile.badgeLabel =
+            mem.level == .easy ? nil : "\(Int(mem.pressure * 100))%"
     }
 
     /// What Boost targets unless you say otherwise: your software, not Apple's.
@@ -191,7 +208,19 @@ public final class Engine: ObservableObject {
     }
 
     func items(in category: Category) -> [Item] {
-        visibleItems.filter { $0.category == category }
+        let rows = visibleItems.filter { $0.category == category }
+        let ascending = sortAscending
+        switch sortOption {
+        case .size:
+            return rows.sorted { ascending ? $0.rssBytes < $1.rssBytes : $0.rssBytes > $1.rssBytes }
+        case .name:
+            return rows.sorted {
+                let order = $0.name.localizedCaseInsensitiveCompare($1.name)
+                return ascending ? order == .orderedAscending : order == .orderedDescending
+            }
+        case .cpu:
+            return rows.sorted { ascending ? $0.cpu < $1.cpu : $0.cpu > $1.cpu }
+        }
     }
 
     /// Bytes this app's floor has risen by, when that is worth saying.
