@@ -123,7 +123,12 @@ struct DiskView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            Button(engine.selection.count == engine.targets.count ? "Select none" : "Select all") {
+            // Guarded on `!targets.isEmpty` too: 0 selected of 0 targets
+            // reads as "all selected" by the count comparison alone, which
+            // would label a disabled button "Select none" while nothing is
+            // selected and there's nothing to select.
+            Button(!engine.targets.isEmpty && engine.selection.count == engine.targets.count
+                   ? "Select none" : "Select all") {
                 engine.setAll(engine.selection.count != engine.targets.count)
             }
             .buttonStyle(.plain)

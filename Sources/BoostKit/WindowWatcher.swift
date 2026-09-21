@@ -29,6 +29,13 @@ final class WindowWatcher {
     var launchGrace: TimeInterval = 8.0
     /// Apps the user pinned. Injected so this class stands alone.
     var keepList: () -> Set<String> = { [] }
+    /// Whether it's safe to quit something right now. Injected for the same
+    /// reason as keepList: Free Memory and Close both take a before/after
+    /// memory reading around their own work, and an unrelated quit landing
+    /// in that window gets its freed memory misattributed to whichever of
+    /// them is running. Defaults to always-safe so this class still stands
+    /// alone with no Engine around it, e.g. in tests.
+    var canQuitNow: () -> Bool = { true }
     /// Called whenever an app is quit, for logging in tests and the UI.
     var onQuit: (String) -> Void = { _ in }
 
@@ -129,6 +136,11 @@ final class WindowWatcher {
 
             if let since = emptySince[pid] {
                 if now.timeIntervalSince(since) >= settleDelay {
+                    // Left running rather than quit into the middle of a
+                    // Free Memory or Close reading. emptySince is untouched,
+                    // so the next tick simply tries again — this defers the
+                    // quit rather than losing it.
+                    guard canQuitNow() else { continue }
                     emptySince[pid] = nil
                     onQuit(name)
                     // Unrefusable, straight away — not a lesser version of a

@@ -290,7 +290,7 @@ struct MemoryHeader: View {
                     + "Stops on its own if your Mac starts paging to disk.")
 
                 VStack(alignment: .leading, spacing: 7) {
-                    Label("Mem Reduct-style reclaim for macOS", systemImage: "arrow.triangle.2.circlepath")
+                    Label("How Free Memory actually works", systemImage: "arrow.triangle.2.circlepath")
                         .font(.system(size: 11, weight: .semibold))
                     Text("It briefly asks macOS for memory so the system releases idle pages, then gives that request back. Apps stay open, swap is watched, and it stops before paging becomes the cost.")
                         .font(.system(size: 10))
@@ -817,7 +817,7 @@ struct FirstRunCard: View {
                 // instead of the bold. That mistake is invisible in code review
                 // and obvious in a screenshot.
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("**Free Memory** is the main action. It is Boost's macOS answer to Mem Reduct: it asks macOS to reclaim idle pages, then gives the request back. It does not close apps.")
+                    Text("**Free Memory** is the main action. It asks macOS to reclaim idle pages, then gives the request back. It does not close apps.")
                     Text("**Pause** and **Close** are optional process tools. Pause is reversible; Close quits apps. **Swap** is the number that tells you when memory pressure is real.")
                 }
                 .font(.system(size: 11))
