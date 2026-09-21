@@ -256,6 +256,45 @@ enum SystemScan {
             ))
         }
 
+        // --- 3. Everything still running that isn't an app, an agent
+        // NSWorkspace knows about, or a widget: launchd, syslogd, cfprefsd,
+        // distnoted, mdworker, third-party background daemons — the actual
+        // "macOS internals" the System category and "Show system processes"
+        // are supposed to reveal. Without this step almost nothing ever
+        // reaches that category, because steps 1 and 2 only see what AppKit
+        // considers an application; the toggle existed but had close to
+        // nothing behind it to show.
+        //
+        // Listed one row per process rather than grouped by parent the way
+        // an app's helpers are: nearly every process on the system is
+        // eventually a descendant of launchd (pid 1), so grouping by parent
+        // here would collapse the whole machine into one giant "launchd"
+        // row instead of the per-process list this is meant to be.
+        //
+        // Always Category.system, never .agent, regardless of whether the
+        // executable is Apple's — defaultSelectable never auto-ticks
+        // .system, so an unfamiliar third-party daemon can't end up
+        // pre-selected for Close just because someone turned this toggle on.
+        for (pid, s) in procs where !claimed.contains(pid) {
+            claimed.insert(pid)
+            let name = s.path.isEmpty ? "pid \(pid)" : (s.path as NSString).lastPathComponent
+            let baseID = s.path.isEmpty ? "pid:\(pid)" : s.path
+            items.append(Item(
+                baseID: baseID,
+                id: baseID,
+                name: name,
+                category: .system,
+                isAppleSoftware: Guard.isSystemPath(s.path),
+                pids: [pid],
+                rssBytes: s.rssBytes,
+                rssKnown: s.rssKnown,
+                cpu: s.cpu,
+                isPaused: s.stopped,
+                bundlePath: nil,
+                runningAppPID: nil
+            ))
+        }
+
         // Any baseID shared by more than one live item gets the pid appended —
         // every member of the group, so the result doesn't depend on sort order.
         var counts: [String: Int] = [:]
