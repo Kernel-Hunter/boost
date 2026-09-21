@@ -22,8 +22,8 @@ cd boost && ./Scripts/build.sh
 macOS 14+, Apple Silicon and Intel — every build is universal, one binary for
 both. Builds with Command Line Tools. Xcode is not required.
 
-![Boost's memory tab: 10.40 GB in use of 16.00 GB, a pressure sparkline, and a
-list of running apps grouped with their helper processes](docs/images/memory.png)
+![Boost's memory tab: a radial pressure gauge, 11.56 GB in use of 16.00 GB, and
+a card list of running apps grouped with their helper processes](docs/images/memory.png)
 
 > **On signing.** Boost is signed with a local certificate, not notarized:
 > notarizing needs a paid Apple Developer account, and this is free software.
@@ -54,26 +54,43 @@ Boost is built the other way round:
 
 ## Free Memory, compared with Mem Reduct
 
-Mem Reduct on Windows can call Windows memory-management APIs directly. macOS
-does not expose the same "trim every working set" switch to apps.
+Mem Reduct works by calling `EmptyWorkingSet`, a Windows API that lets one
+process force another process's pages out to the pagefile. macOS has no
+equivalent. No public API lets a third-party app reach into another process
+and push its memory to disk. That's confirmed in
+[Apple's own kernel source](https://github.com/apple-oss-distributions/xnu/blob/main/doc/vm/memorystatus_notify.md),
+not a limitation of this app.
 
-Boost uses the safe macOS route instead: it briefly asks macOS for memory using
-Apple's own `memory_pressure` tool, which nudges the system to release idle
-pages and compress what can be compressed. Boost then gives that request back,
-checks the before and after readings, and reports only the memory that stopped
-being used.
+It's also not a technique worth copying if it existed. Apple redesigned macOS
+around memory compression specifically to avoid swap: reading a compressed
+page back from RAM is far faster than reading from disk, even an SSD, and
+repeated swap writes wear the drive down. Mem Reduct's approach predates that
+redesign. On today's macOS, deliberately forcing pages to swap would make the
+Mac slower, not lighter.
+
+So Boost uses the route macOS actually offers: it briefly asks the system for
+memory using Apple's own `memory_pressure` tool, which nudges the kernel to
+release idle pages and compress what it can. Boost then gives that request
+back, checks the before and after readings, and reports only the memory that
+stopped being used.
 
 That means:
 
 - It does not close apps.
 - It does not delete files.
-- It does not need your admin password.
+- It does not need your admin password, unless you turn on the optional disk
+  cache purge yourself.
 - It stops early if swap starts growing, because paging to disk would cost more
   than the reclaim is worth.
 
-This does not harm the Mac. It uses a system tool shipped by Apple, keeps the run
-short, and stops when the safety checks say the Mac has no cheap memory left to
-give back.
+Expect a few hundred MB to around a gigabyte on a typical run. That's not a
+bug: even `purge`, Apple's own and more aggressive disk-cache tool, nets a
+similar range on Apple Silicon. If your Mac genuinely isn't short on memory,
+there isn't much sitting idle to give back, on Windows or on macOS. If you
+want Boost to push harder anyway, Settings has an aggressive mode that asks
+for memory more forcefully. It's off by default and says why in the same
+screen: pushed far enough, it can be the reason the kernel decides to kill
+something on its own, with no warning from Boost first.
 
 ## What it does
 
@@ -129,11 +146,20 @@ this destroy data; there is a test that builds exactly that trap.
 ### Elsewhere
 
 - **Menu bar** readout, showing the number only when it is worth reading
+- **Dock icon badge**, the same idea applied to the one place you can see it
+  without opening Boost at all
 - **⌥⌘B** from any app (off by default, because claiming a system-wide shortcut is not
   something an app should help itself to)
+- **Sort the list** by name, memory, or CPU, in either direction
+- **Reveal in Finder** from any row's menu
 - **Close button quits the app**, for apps that stay running with no windows
 - **Warn me when swap climbs**: tells you, and can pause what is ticked. It
   can never close anything, and a test enforces that
+- **Settings (⌘,)** holds all of the above, plus the aggressive reclaim mode
+  and the optional disk cache purge
+
+![Boost's Settings window: window behaviour, the aggressive reclaim toggle
+with its trade-off spelled out, and the swap-warning rule](docs/images/settings.png)
 
 ## Permissions
 
