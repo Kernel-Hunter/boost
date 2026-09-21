@@ -71,25 +71,26 @@ struct ByteFormatTests {
 @Suite("CPU formatting")
 struct CPUFormatTests {
 
-    /// Regression: rounding to a flat integer made 0.1–9.9% — where an
-    /// idle Mac's real activity actually lives — read as "0%" for almost
-    /// every row, making the whole column look broken rather than idle.
-    @Test("Shows a decimal below 10%, where whole numbers would flatten everything to 0%", arguments: [
-        (0.0, "0.0%"),
-        (0.4, "0.4%"),
-        (4.7, "4.7%"),
-        (9.9, "9.9%"),
+    /// Regression: an integer alone rounds everything under 1% down to a
+    /// flat, wrong "0%" — the exact range where a mostly-idle Mac's real
+    /// activity lives, which made the column look broken rather than idle.
+    /// A first fix showed a decimal there instead ("0.1%", "0.4%"), which
+    /// swapped one problem for another: an oddly specific-looking number
+    /// for something this small nobody should be trusting to a tenth of a
+    /// percent. "<1%" is honest without pretending to precision.
+    @Test("Reads as <1% below one percent, neither flattened to 0% nor falsely precise", arguments: [
+        0.0, 0.1, 0.4, 0.9,
     ])
-    func decimalBelowTen(percent: Double, expected: String) {
-        #expect(fmtCPU(percent) == expected)
+    func belowOnePercent(percent: Double) {
+        #expect(fmtCPU(percent) == "<1%")
     }
 
-    @Test("Switches to a whole number at 10% and above, where a decimal adds noise, not signal", arguments: [
-        (10.0, "10%"),
+    @Test("Shows a plain whole number at 1% and above", arguments: [
+        (1.0, "1%"),
         (42.9, "42%"),
         (100.0, "100%"),
     ])
-    func wholeNumberAtTenAndAbove(percent: Double, expected: String) {
+    func wholeNumberAtOneAndAbove(percent: Double, expected: String) {
         #expect(fmtCPU(percent) == expected)
     }
 }

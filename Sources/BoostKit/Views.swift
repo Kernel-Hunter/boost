@@ -1,6 +1,19 @@
 import SwiftUI
 import AppKit
 
+// MARK: - Brand
+
+extension Color {
+    /// Boost's own accent, not the generic system blue every other utility
+    /// defaults to. A controlled teal — reads as performance/clarity rather
+    /// than borrowing whatever the OS's accent color happens to be, so the
+    /// app has a visual identity of its own regardless of what someone set
+    /// in System Settings. Used for anything that should read as "this is
+    /// Boost speaking": primary actions, the gauge, the sparkline, the
+    /// sidebar's selected state.
+    static let brand = Color(red: 0.10, green: 0.78, blue: 0.64)
+}
+
 // MARK: - Icons
 
 /// Main-actor confined rather than `nonisolated(unsafe)`: it is a plain mutable
@@ -59,15 +72,18 @@ public struct ContentView: View {
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 0) {
-            TabBar(tab: $tabs.tab)
+        HStack(spacing: 0) {
+            Sidebar(tab: $tabs.tab, engine: engine)
             Divider().opacity(0.5)
-            switch tabs.tab {
-            case .memory: memoryTab
-            case .disk:   DiskView(engine: disk)
+            Group {
+                switch tabs.tab {
+                case .memory: memoryTab
+                case .disk:   DiskView(engine: disk)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 820, minHeight: 600)
+        .frame(minWidth: 960, minHeight: 600)
         .background(Color(nsColor: .windowBackgroundColor))
         .overlay(alignment: .bottom) {
             if let report = disk.report, tabs.tab == .disk {
@@ -160,48 +176,90 @@ public struct ContentView: View {
     }
 }
 
-// MARK: - Tabs
+// MARK: - Sidebar
 
-/// Hand-rolled rather than a TabView: the two tabs need to sit above content
-/// that already has its own header and footer bars, and TabView on macOS
-/// insists on framing the whole thing.
-struct TabBar: View {
+/// A real sidebar rather than a thin top strip: this is the one navigation
+/// decision that most changes how the app reads at a glance — a sidebar
+/// reads as a considered app with a place for things to grow, the way
+/// Mail, Notes, and most of the utilities in Boost's own category (iStat
+/// Menus, DaisyDisk) are laid out. It carries a persistent, always-visible
+/// pressure readout at its foot, so the number that matters most is never
+/// lost just because you switched to the Disk tab.
+struct Sidebar: View {
     @Binding var tab: Tab
-    @Namespace private var underline
+    @ObservedObject var engine: Engine
 
     var body: some View {
-        HStack(spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color.brand)
+                Text("Boost")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 20)
+            .padding(.bottom, 24)
+
             ForEach(Tab.allCases) { t in
                 Button {
                     tab = t
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: t.symbol).font(.system(size: 11))
-                        Text(t.title).font(.system(size: 12, weight: .medium))
+                    HStack(spacing: 9) {
+                        Image(systemName: t.symbol)
+                            .font(.system(size: 12, weight: .medium))
+                            .frame(width: 16)
+                        Text(t.title).font(.system(size: 12.5, weight: .medium))
+                        Spacer(minLength: 0)
                     }
-                    .foregroundStyle(tab == t ? Color.primary : Color.secondary)
-                    .padding(.horizontal, 12).padding(.vertical, 7)
-                    .background(alignment: .bottom) {
+                    .foregroundStyle(tab == t ? Color.white : Color.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background {
                         if tab == t {
-                            RoundedRectangle(cornerRadius: 1.5)
-                                .fill(Color.accentColor)
-                                .frame(height: 2)
-                                .matchedGeometryEffect(id: "underline", in: underline)
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(Color.brand.gradient)
                         }
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .padding(.horizontal, 10)
                 .help(t == .memory ? "Running apps and memory" : "Reclaimable disk space")
                 .accessibilityLabel(t.title)
                 .accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
             }
-            Spacer()
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Memory").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(engine.mem.pressure * 100))%")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                }
+                Capsule().fill(Color.primary.opacity(0.1)).frame(height: 4)
+                    .overlay(alignment: .leading) {
+                        GeometryReader { geo in
+                            Capsule().fill(Color.brand.gradient)
+                                .frame(width: geo.size.width * min(1, max(0, engine.mem.pressure)))
+                        }
+                    }
+                    .frame(height: 4)
+            }
+            .padding(11)
+            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 10)
+            .padding(.bottom, 12)
+            .animation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.pressure)
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 4)
+        .frame(width: 176)
+        .frame(maxHeight: .infinity)
         .background(.bar)
-        .animation(.spring(duration: 0.25, bounce: 0), value: tab)
+        .animation(.spring(response: 0.3, dampingFraction: 1.0), value: tab)
     }
 }
 
@@ -226,22 +284,36 @@ struct MemoryHeader: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 24) {
+        HStack(alignment: .center, spacing: 26) {
+            ZStack {
+                RadialGauge(progress: engine.mem.pressure, tint: statusColor)
+                    .frame(width: 92, height: 92)
+                VStack(spacing: 0) {
+                    Text("\(Int(engine.mem.pressure * 100))")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                    Text("%")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .animation(.spring(response: 0.5, dampingFraction: 1.0), value: engine.mem.pressure)
+            .accessibilityElement()
+            .accessibilityLabel("Memory pressure")
+            .accessibilityValue("\(Int(engine.mem.pressure * 100)) percent")
+
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(fmtBytes(engine.mem.used))
-                        .font(.system(size: 36, weight: .semibold, design: .rounded))
+                        .font(.system(size: 30, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .kerning(-0.8)
+                        .kerning(-0.6)
                         .contentTransition(.numericText())
-                    Text("in use of \(fmtBytes(engine.mem.total))")
-                        .font(.title3).foregroundStyle(.secondary)
+                    Text("of \(fmtBytes(engine.mem.total))")
+                        .font(.system(size: 14)).foregroundStyle(.secondary)
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.used)
-
-                MemoryBar(mem: engine.mem)
-                    .frame(height: 9)
-                    .frame(maxWidth: 460)
 
                 HStack(spacing: 14) {
                     Label(statusText, systemImage: "circle.fill")
@@ -284,6 +356,7 @@ struct MemoryHeader: View {
                     .padding(.vertical, 9)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.brand)
                 .controlSize(.large)
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(engine.busy != nil)
@@ -297,7 +370,7 @@ struct MemoryHeader: View {
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 18, height: 18)
-                            .background(Color.accentColor.gradient, in: Circle())
+                            .background(Color.brand.gradient, in: Circle())
                         Text("How Free Memory actually works")
                             .font(.system(size: 11, weight: .semibold))
                     }
@@ -307,7 +380,18 @@ struct MemoryHeader: View {
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         Label("No app closing", systemImage: "checkmark.circle.fill")
-                        Label("No admin password", systemImage: "checkmark.circle.fill")
+                        // This claim is only true while the opt-in purge
+                        // setting is off — that's the one thing Free Memory
+                        // does that asks for a password. Saying "no admin
+                        // password" unconditionally while it was about to
+                        // ask for one is exactly the kind of invented
+                        // reassurance this app exists to not do.
+                        if engine.purgeOnBoost {
+                            Label("Also purges disk cache (asks for your password)", systemImage: "exclamationmark.circle.fill")
+                                .foregroundStyle(.orange)
+                        } else {
+                            Label("No admin password", systemImage: "checkmark.circle.fill")
+                        }
                     }
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.green)
@@ -326,35 +410,22 @@ struct MemoryHeader: View {
     }
 }
 
-/// Used / cached / free as one continuous bar — cached is deliberately shown as
-/// its own colour because it is *available*, not wasted.
-struct MemoryBar: View {
-    let mem: MemStats
+/// A ring instead of a bar for the header's headline figure — the one
+/// piece of this redesign meant to read as a dashboard at a glance rather
+/// than a labelled stat. `.round` line caps and a gradient stroke keep it
+/// from looking like a stock progress indicator.
+struct RadialGauge: View {
+    let progress: Double   // 0...1
+    let tint: Color
 
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let total = max(Double(mem.total), 1)
-            let usedW = w * Double(mem.used) / total
-            let cacheW = w * Double(mem.cached) / total
-
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.primary.opacity(0.08))
-                HStack(spacing: 0) {
-                    Rectangle().fill(
-                        LinearGradient(colors: [.accentColor, .accentColor.opacity(0.75)],
-                                       startPoint: .leading, endPoint: .trailing))
-                        .frame(width: max(0, usedW))
-                    Rectangle().fill(Color.accentColor.opacity(0.22))
-                        .frame(width: max(0, cacheW))
-                }
-                .clipShape(Capsule())
-            }
+        ZStack {
+            Circle().stroke(Color.primary.opacity(0.08), lineWidth: 9)
+            Circle()
+                .trim(from: 0, to: max(0.001, min(progress, 1)))
+                .stroke(tint.gradient, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                .rotationEffect(.degrees(-90))
         }
-        .animation(.easeOut(duration: 0.25), value: mem.used)
-        .accessibilityElement()
-        .accessibilityLabel("Memory use")
-        .accessibilityValue("\(fmtBytes(mem.used)) in use, \(fmtBytes(mem.cached)) cached, of \(fmtBytes(mem.total))")
     }
 }
 
@@ -908,7 +979,7 @@ struct FirstRunCard: View {
             .controlSize(.small)
         }
         .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(Color.accentColor.opacity(0.07))
+        .background(Color.brand.opacity(0.07))
         .overlay(alignment: .bottom) { Divider().opacity(0.5) }
         .transition(.move(edge: .top).combined(with: .opacity))
     }

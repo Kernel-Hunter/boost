@@ -169,8 +169,11 @@ func fmtBytes(_ b: UInt64) -> String {
     return "\(b) B"
 }
 
-/// One decimal under 10%, where an idle Mac's real activity actually lives —
-/// rounding 0.1–9.9% down to a flat integer made almost every row read "0%".
+/// "<1%" below one percent, rather than either a flat wrong "0%" or a
+/// decimal like "0.3%" that reads as an oddly specific number for
+/// something this small to matter about. Genuinely below 1% either way —
+/// this says so plainly instead of pretending to more precision than a
+/// glance at a percentage column is ever going to be trusted for.
 func fmtCPU(_ percent: Double) -> String {
-    percent < 10 ? String(format: "%.1f%%", percent) : "\(Int(percent))%"
+    percent < 1 ? "<1%" : "\(Int(percent))%"
 }

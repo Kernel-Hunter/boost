@@ -432,7 +432,7 @@ public final class Engine: ObservableObject {
 
         Task {
             let outcome = await Task.detached(priority: .userInitiated) {
-                Reclaim.run()
+                Reclaim.runSeries()
             }.value
 
             var purgeNote = ""
