@@ -19,7 +19,8 @@ git clone https://github.com/Kernel-Hunter/boost.git
 cd boost && ./Scripts/build.sh
 ```
 
-macOS 14+. Builds with Command Line Tools. Xcode is not required.
+macOS 14+, Apple Silicon and Intel — every build is universal, one binary for
+both. Builds with Command Line Tools. Xcode is not required.
 
 ![Boost's memory tab: 10.40 GB in use of 16.00 GB, a pressure sparkline, and a
 list of running apps grouped with their helper processes](docs/images/memory.png)
