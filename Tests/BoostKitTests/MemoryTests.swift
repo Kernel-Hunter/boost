@@ -67,3 +67,29 @@ struct ByteFormatTests {
         #expect(fmtBytes(0) == "0 B")
     }
 }
+
+@Suite("CPU formatting")
+struct CPUFormatTests {
+
+    /// Regression: rounding to a flat integer made 0.1–9.9% — where an
+    /// idle Mac's real activity actually lives — read as "0%" for almost
+    /// every row, making the whole column look broken rather than idle.
+    @Test("Shows a decimal below 10%, where whole numbers would flatten everything to 0%", arguments: [
+        (0.0, "0.0%"),
+        (0.4, "0.4%"),
+        (4.7, "4.7%"),
+        (9.9, "9.9%"),
+    ])
+    func decimalBelowTen(percent: Double, expected: String) {
+        #expect(fmtCPU(percent) == expected)
+    }
+
+    @Test("Switches to a whole number at 10% and above, where a decimal adds noise, not signal", arguments: [
+        (10.0, "10%"),
+        (42.9, "42%"),
+        (100.0, "100%"),
+    ])
+    func wholeNumberAtTenAndAbove(percent: Double, expected: String) {
+        #expect(fmtCPU(percent) == expected)
+    }
+}

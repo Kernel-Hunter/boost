@@ -230,12 +230,14 @@ struct MemoryHeader: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(fmtBytes(engine.mem.used))
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        .font(.system(size: 36, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .kerning(-0.6)
+                        .kerning(-0.8)
+                        .contentTransition(.numericText())
                     Text("in use of \(fmtBytes(engine.mem.total))")
                         .font(.title3).foregroundStyle(.secondary)
                 }
+                .animation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.used)
 
                 MemoryBar(mem: engine.mem)
                     .frame(height: 9)
@@ -289,23 +291,34 @@ struct MemoryHeader: View {
                 .help("Reclaims idle memory without closing apps or asking for a password. "
                     + "Stops on its own if your Mac starts paging to disk.")
 
-                VStack(alignment: .leading, spacing: 7) {
-                    Label("How Free Memory actually works", systemImage: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 11, weight: .semibold))
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 7) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 18, height: 18)
+                            .background(Color.accentColor.gradient, in: Circle())
+                        Text("How Free Memory actually works")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
                     Text("It briefly asks macOS for memory so the system releases idle pages, then gives that request back. Apps stay open, swap is watched, and it stops before paging becomes the cost.")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 8) {
-                        Label("No app closing", systemImage: "checkmark.circle")
-                        Label("No admin password", systemImage: "checkmark.circle")
+                    HStack(spacing: 10) {
+                        Label("No app closing", systemImage: "checkmark.circle.fill")
+                        Label("No admin password", systemImage: "checkmark.circle.fill")
                     }
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.green)
                 }
-                .padding(10)
-                .frame(width: 258, alignment: .leading)
-                .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 8))
+                .padding(12)
+                .frame(width: 264, alignment: .leading)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                }
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 18)
@@ -394,6 +407,8 @@ struct FilterBar: View {
                     .help("Apps quit when you close their last window")
             }
 
+            SortControl(engine: engine)
+
             Toggle("Show system processes", isOn: $engine.showSystem)
                 .toggleStyle(.switch).controlSize(.mini)
                 .font(.caption)
@@ -401,6 +416,50 @@ struct FilterBar: View {
         }
         .padding(.horizontal, 22).padding(.vertical, 9)
         .background(.bar)
+    }
+}
+
+/// Name / Memory / CPU, with a direction flip. There was no way to change
+/// how the list was ordered before this — buildItems() fixed it at
+/// size-descending and nothing in the UI could ask for anything else.
+struct SortControl: View {
+    @ObservedObject var engine: Engine
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Menu {
+                ForEach(SortOption.allCases) { option in
+                    Button {
+                        engine.sortOption = option
+                    } label: {
+                        if engine.sortOption == option { Label(option.title, systemImage: "checkmark") }
+                        else { Text(option.title) }
+                    }
+                }
+            } label: {
+                Label(engine.sortOption.title, systemImage: engine.sortOption.symbol)
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help("Sort the list by")
+
+            Button {
+                engine.sortAscending.toggle()
+            } label: {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 10, weight: .semibold))
+                    .rotationEffect(.degrees(engine.sortAscending ? 0 : 180))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .padding(4)
+            .contentShape(Rectangle())
+            .animation(.spring(response: 0.3, dampingFraction: 1.0), value: engine.sortAscending)
+            .help(engine.sortAscending ? "Ascending — click for descending" : "Descending — click for ascending")
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
     }
 }
 
@@ -519,7 +578,7 @@ struct ItemRow: View {
         .background(hover.on ? Color.primary.opacity(0.045) : .clear)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
-        .animation(.easeOut(duration: 0.12), value: hover.on)
+        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
         .contextMenu {
             Button(kept ? "Stop protecting" : "Never close this") { engine.toggleKeep(item) }
                 .disabled(locked)
@@ -528,6 +587,12 @@ struct ItemRow: View {
                 item.isPaused ? engine.resume(item) : engine.pause(item)
             }.disabled(locked)
             Button("Close") { engine.quit(item) }.disabled(locked)
+            if let path = item.bundlePath {
+                Divider()
+                Button("Reveal in Finder") {
+                    NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: "")
+                }
+            }
         }
     }
 
@@ -535,8 +600,14 @@ struct ItemRow: View {
         if let icon = IconCache.icon(for: item) {
             Image(nsImage: icon).resizable().frame(width: 22, height: 22)
         } else {
+            // No real app icon to show — a category symbol on its own reads
+            // as an empty slot next to rows that have real icons. A soft
+            // rounded container gives it the same visual weight instead.
             Image(systemName: item.category.symbol)
-                .foregroundStyle(.tertiary).frame(width: 22, height: 22)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
         }
     }
 
@@ -578,7 +649,11 @@ struct ItemRow: View {
                         .fill(item.cpu > 40 ? Color.orange : Color.secondary.opacity(0.65))
                         .frame(width: 34 * min(item.cpu, 100) / 100)
                 }
-            Text("\(Int(item.cpu))%")
+            // Below 10%, an integer percentage reads as "0%" for almost
+            // everything on a Mac that's actually idle — real activity in
+            // the 0.1–9% range is exactly what this column exists to show,
+            // and rounding it away made the whole column look broken.
+            Text(fmtCPU(item.cpu))
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(.tertiary)
                 .frame(width: 30, alignment: .trailing)
