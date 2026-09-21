@@ -73,7 +73,7 @@ enum Reclaim {
     /// `sample` is injected so the decision loop can be tested without a real
     /// machine under pressure.
     static func run(sample: () -> MemStats = { SystemScan.memoryNonIsolated() },
-                           launch: () -> Process? = defaultLaunch) -> Outcome {
+                           launch: () -> Process? = { defaultLaunch() }) -> Outcome {
         var outcome = Outcome()
         let before = sample()
 
@@ -121,7 +121,7 @@ enum Reclaim {
     /// declaring victory after the first short window.
     static func runSeries(maxPasses: Int = 2,
                           sample: () -> MemStats = { SystemScan.memoryNonIsolated() },
-                          launch: () -> Process? = defaultLaunch) -> Outcome {
+                          launch: () -> Process? = { defaultLaunch() }) -> Outcome {
         var total = Outcome()
         for i in 0..<maxPasses {
             let pass = run(sample: sample, launch: launch)
@@ -140,12 +140,14 @@ enum Reclaim {
         return total
     }
 
-    static func defaultLaunch() -> Process? {
+    /// `warn` asks for reclaim; `critical` pushes hard enough that the
+    /// kernel can decide to start killing something on its own. `critical`
+    /// only ever runs when the person using this app opted into it by hand
+    /// in Settings — never a default this picks for them.
+    static func defaultLaunch(level: String = "warn") -> Process? {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/memory_pressure")
-        // `warn` and not `critical`: critical allocates until the kernel is
-        // ready to start killing things, which is a bad trade for a number.
-        p.arguments = ["-l", "warn", "-Q"]
+        p.arguments = ["-l", level, "-Q"]
         p.standardOutput = FileHandle.nullDevice
         p.standardError = FileHandle.nullDevice
         do { try p.run() } catch { return nil }

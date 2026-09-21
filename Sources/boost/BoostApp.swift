@@ -29,5 +29,9 @@ struct BoostApp: App {
         } label: {
             MenuBarLabel(engine: engine)
         }
+
+        Settings {
+            BoostSettingsView()
+        }
     }
 }
