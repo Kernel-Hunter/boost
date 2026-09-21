@@ -127,7 +127,7 @@ public struct ContentView: View {
                             ForEach(rows) { item in
                                 ItemRow(engine: engine, item: item)
                                     .listRowInsets(EdgeInsets())
-                                    .listRowSeparator(.visible)
+                                    .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
                             }
                         }
@@ -644,9 +644,17 @@ struct ItemRow: View {
 
             cpuMeter
         }
-        .padding(.horizontal, 22).padding(.vertical, 7)
+        .padding(.horizontal, 14).padding(.vertical, 10)
         .opacity(item.isPaused ? 0.62 : 1)
-        .background(hover.on ? Color.primary.opacity(0.045) : .clear)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
+        }
+        .padding(.horizontal, 22).padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
         .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
