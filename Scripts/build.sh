@@ -21,8 +21,36 @@ INSTALL=1
 
 echo "compiling…"
 mkdir -p "$BUILD"
-swift build -c release --product boost
-cp "$(swift build -c release --product boost --show-bin-path)/boost" "$BUILD/Boost"
+
+# Built for both CPUs Macs actually ship on: Apple Silicon (arm64) and Intel
+# (x86_64). Every current Mac, and the CI runner this also builds on, is
+# arm64 — so building for the host alone produces an arm64-only binary. That
+# doesn't run slower on an Intel Mac, it doesn't run at all: Rosetta
+# translates x86_64 to arm64, never the other way.
+#
+# Built as two single-arch passes and merged with lipo, rather than the
+# one-line `swift build --arch arm64 --arch x86_64`: passing --arch twice in
+# one invocation switches SwiftPM to Xcode's XCBuild underneath, which needs
+# Xcode itself installed. One --arch at a time stays on SwiftPM's own build
+# system, which is the whole reason this only needs Command Line Tools.
+for arch in arm64 x86_64; do
+  swift build -c release --product boost --arch "$arch"
+done
+lipo -create -output "$BUILD/Boost" \
+  "$(swift build -c release --product boost --arch arm64  --show-bin-path)/boost" \
+  "$(swift build -c release --product boost --arch x86_64 --show-bin-path)/boost"
+
+# A universal build that silently narrowed to one slice would fail on
+# exactly the machine this is meant to cover, and do it quietly. Checked
+# once here rather than trusted.
+SLICES="$(lipo -archs "$BUILD/Boost")"
+for arch in arm64 x86_64; do
+  case " $SLICES " in
+    *" $arch "*) ;;
+    *) echo "error: built binary is missing $arch (has: $SLICES)" >&2; exit 1 ;;
+  esac
+done
+echo "  universal binary: $SLICES"
 
 rm -rf "$STAGE"
 mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources"
