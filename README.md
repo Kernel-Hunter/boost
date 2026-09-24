@@ -214,3 +214,5 @@ that introduces it will say so plainly.
 GPL-3.0. See [LICENSE](LICENSE).
 
 Built by [Karim Masmoudi](https://github.com/Kernel-Hunter).
+
+If Boost is useful to you, a star helps other people find it. Thank you.
