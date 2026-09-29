@@ -1,11 +1,10 @@
 # Boost
 
-A memory and disk utility for macOS that tells you the truth.
+Freeze the apps you're not using, then bring them back exactly as they were.
+Boost is a free memory and disk utility for macOS that tells you the truth.
 
-Free memory without closing apps, freeze apps and bring them back exactly as
-they were, and find disk space that is genuinely safe to reclaim. Boost is the
-macOS answer to tools like Mem Reduct on Windows, built around what macOS
-actually allows rather than a fake cleaner number.
+![Boost's memory tab: a radial pressure gauge, 11.56 GB in use of 16.00 GB, and
+a card list of running apps grouped with their helper processes](docs/images/memory.png)
 
 ```bash
 brew install --cask kernel-hunter/boost/boost
@@ -19,20 +18,22 @@ git clone https://github.com/Kernel-Hunter/boost.git
 cd boost && ./Scripts/build.sh
 ```
 
-macOS 14+, Apple Silicon and Intel — every build is universal, one binary for
+macOS 14+, Apple Silicon and Intel. Every build is universal, one binary for
 both. Builds with Command Line Tools. Xcode is not required.
+
+If Boost is useful to you, a star helps other people find it.
+
+Boost frees memory without closing apps, freezes apps and brings them back
+exactly as they were, and finds disk space that is genuinely safe to reclaim.
+It is the macOS answer to tools like Mem Reduct on Windows, built around what
+macOS actually allows rather than a fake cleaner number.
 
 [![Watch the 19-second demo](https://github.com/Kernel-Hunter/boost/releases/download/v1.1.0/brag.jpg)](https://github.com/Kernel-Hunter/boost/releases/download/v1.1.0/brag.mp4)
 
-![Boost's memory tab: a radial pressure gauge, 11.56 GB in use of 16.00 GB, and
-a card list of running apps grouped with their helper processes](docs/images/memory.png)
-
-> **On signing.** Boost is signed with a local certificate, not notarized:
-> notarizing needs a paid Apple Developer account, and this is free software.
-> A direct download of the `.zip` will therefore be stopped by Gatekeeper, and
-> on recent macOS that is genuinely awkward to get past. The cask clears the
-> quarantine flag for you; building from source never sets one. Those are the
-> two paths worth using.
+> **On signing.** Boost is signed with a local certificate, not notarized,
+> because notarizing needs a paid Apple Developer account. A downloaded `.zip`
+> will be stopped by Gatekeeper. The cask clears the quarantine flag for you,
+> and building from source never sets one, so use one of those two.
 
 ---
 
