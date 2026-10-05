@@ -10,6 +10,7 @@ let ctx = NSGraphicsContext.current!.cgContext
 
 let content = NSRect(x: inset, y: inset, width: canvas - inset * 2, height: canvas - inset * 2)
 let squircle = NSBezierPath(roundedRect: content, xRadius: radius, yRadius: radius)
+let centre = NSPoint(x: canvas * 0.5, y: canvas * 0.5)
 
 // Drop shadow so the tile sits on the desktop rather than floating flat.
 ctx.saveGState()
@@ -22,45 +23,77 @@ ctx.restoreGState()
 ctx.saveGState()
 squircle.addClip()
 
-// Indigo -> electric cyan, on the diagonal.
-NSGradient(colors: [NSColor(srgbRed: 0.24, green: 0.16, blue: 0.83, alpha: 1),
-                    NSColor(srgbRed: 0.15, green: 0.44, blue: 0.98, alpha: 1),
-                    NSColor(srgbRed: 0.07, green: 0.78, blue: 1.00, alpha: 1)])?
-    .draw(in: content, angle: -62)
+// Deep teal-black, the same family as the app's accent.
+NSGradient(colors: [NSColor(srgbRed: 0.04, green: 0.09, blue: 0.10, alpha: 1),
+                    NSColor(srgbRed: 0.06, green: 0.17, blue: 0.18, alpha: 1)])?
+    .draw(in: content, angle: -60)
 
-// Glow behind the bolt, so the white reads as emitting light.
-NSGradient(colors: [NSColor.white.withAlphaComponent(0.30), NSColor.white.withAlphaComponent(0)])?
-    .draw(fromCenter: NSPoint(x: canvas * 0.5, y: canvas * 0.52), radius: 0,
-          toCenter: NSPoint(x: canvas * 0.5, y: canvas * 0.52), radius: canvas * 0.42,
-          options: [])
+// Glow behind the gauge, so the ring reads as emitting light.
+NSGradient(colors: [NSColor(srgbRed: 0.10, green: 0.78, blue: 0.64, alpha: 0.36),
+                    NSColor(srgbRed: 0.10, green: 0.78, blue: 0.64, alpha: 0)])?
+    .draw(fromCenter: centre, radius: 0, toCenter: centre, radius: canvas * 0.46, options: [])
 
 // Gloss across the top edge.
-NSGradient(colors: [NSColor.white.withAlphaComponent(0.22), NSColor.white.withAlphaComponent(0)])?
-    .draw(in: NSRect(x: inset, y: canvas * 0.56, width: content.width, height: canvas * 0.34), angle: -90)
+NSGradient(colors: [NSColor.white.withAlphaComponent(0.10), NSColor.white.withAlphaComponent(0)])?
+    .draw(in: NSRect(x: inset, y: canvas * 0.58, width: content.width, height: canvas * 0.32), angle: -90)
 
-// Speed arc — a gauge sweep that says "performance" without adding clutter at 16px.
-let arc = NSBezierPath()
-arc.appendArc(withCenter: NSPoint(x: canvas * 0.5, y: canvas * 0.5), radius: canvas * 0.295,
-              startAngle: 208, endAngle: 332, clockwise: true)
-arc.lineWidth = 26
-arc.lineCapStyle = .round
-NSColor.white.withAlphaComponent(0.30).setStroke()
-arc.stroke()
+// The gauge: a faint track, and a bright arc for memory in use.
+let ringRadius = canvas * 0.272, ringWidth = canvas * 0.082
+let track = NSBezierPath()
+track.appendArc(withCenter: centre, radius: ringRadius, startAngle: 0, endAngle: 360)
+track.lineWidth = ringWidth
+NSColor.white.withAlphaComponent(0.08).setStroke()
+track.stroke()
 
-// The bolt.
-let w = canvas, h = canvas
+func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double { a + (b - a) * t }
+let startColor = (r: 0.10, g: 0.78, b: 0.64), endColor = (r: 0.55, g: 0.98, b: 0.82)
+let sweep = 0.74 * 360.0, startAngle = 90.0       // from twelve o'clock, clockwise
+let steps = 120
+func colour(at t: Double) -> NSColor {
+    NSColor(srgbRed: lerp(startColor.r, endColor.r, t), green: lerp(startColor.g, endColor.g, t),
+            blue: lerp(startColor.b, endColor.b, t), alpha: 1)
+}
+
+ctx.saveGState()
+ctx.setShadow(offset: .zero, blur: 28, color: NSColor(srgbRed: 0.10, green: 0.78, blue: 0.64, alpha: 0.55).cgColor)
+for i in 0..<steps {
+    let t0 = Double(i) / Double(steps), t1 = Double(i + 1) / Double(steps)
+    let seg = NSBezierPath()
+    seg.appendArc(withCenter: centre, radius: ringRadius,
+                  startAngle: startAngle - sweep * t0 + 0.4, endAngle: startAngle - sweep * t1 - 0.4,
+                  clockwise: true)
+    seg.lineWidth = ringWidth
+    seg.lineCapStyle = .butt
+    colour(at: (t0 + t1) / 2).setStroke()
+    seg.stroke()
+}
+// Round caps at both ends.
+for (angle, t) in [(startAngle, 0.0), (startAngle - sweep, 1.0)] {
+    let rad = angle * .pi / 180
+    let p = NSPoint(x: centre.x + ringRadius * cos(rad), y: centre.y + ringRadius * sin(rad))
+    colour(at: t).setFill()
+    NSBezierPath(ovalIn: NSRect(x: p.x - ringWidth / 2, y: p.y - ringWidth / 2,
+                                width: ringWidth, height: ringWidth)).fill()
+}
+ctx.restoreGState()
+
+// The bolt, sitting inside the ring.
+let s = 0.50
+func pt(_ x: Double, _ y: Double) -> NSPoint {
+    NSPoint(x: canvas * (0.5 + (x - 0.5) * s), y: canvas * (0.5 + (y - 0.5) * s))
+}
 let bolt = NSBezierPath()
-bolt.move(to: NSPoint(x: w * 0.588, y: h * 0.815))
-bolt.line(to: NSPoint(x: w * 0.337, y: h * 0.468))
-bolt.line(to: NSPoint(x: w * 0.483, y: h * 0.468))
-bolt.line(to: NSPoint(x: w * 0.424, y: h * 0.175))
-bolt.line(to: NSPoint(x: w * 0.675, y: h * 0.522))
-bolt.line(to: NSPoint(x: w * 0.529, y: h * 0.522))
+bolt.move(to: pt(0.588, 0.815))
+bolt.line(to: pt(0.337, 0.468))
+bolt.line(to: pt(0.483, 0.468))
+bolt.line(to: pt(0.424, 0.175))
+bolt.line(to: pt(0.675, 0.522))
+bolt.line(to: pt(0.529, 0.522))
 bolt.close()
 
 ctx.saveGState()
-ctx.setShadow(offset: CGSize(width: 0, height: -6), blur: 22,
-              color: NSColor(srgbRed: 0.04, green: 0.10, blue: 0.45, alpha: 0.55).cgColor)
+ctx.setShadow(offset: CGSize(width: 0, height: -4), blur: 18,
+              color: NSColor(srgbRed: 0.0, green: 0.12, blue: 0.10, alpha: 0.6).cgColor)
 NSColor.white.setFill()
 bolt.fill()
 ctx.restoreGState()
