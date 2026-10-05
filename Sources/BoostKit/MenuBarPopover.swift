@@ -123,8 +123,10 @@ public struct MenuBarContent: View {
     }
 
     private var topItems: [Item] {
+        // Real apps first: a command-line tool with no bundle, such as an npm
+        // process, is not something you recognise or want to act on from here.
         engine.items
-            .filter { !$0.isProtected && $0.category != .system && !$0.isPaused }
+            .filter { !$0.isProtected && $0.category != .system && !$0.isPaused && $0.bundlePath != nil }
             .sorted { $0.rssBytes > $1.rssBytes }
             .prefix(5)
             .map { $0 }

@@ -21,6 +21,8 @@ public struct BoostSettingsView: View {
                 if let problem = login.problem {
                     Text(problem).font(.caption).foregroundStyle(.orange)
                 }
+                Toggle("Always show the percentage in the menu bar", isOn: $engine.menuBarAlways)
+                    .help("Otherwise the number appears only when memory is getting busy.")
                 Toggle("Close button quits the app", isOn: $engine.autoQuitOnClose)
                 Toggle("Global shortcut (⌥⌘B)", isOn: $engine.globalHotkey)
                     .help("Opens Boost and closes what is ticked, from any app.")

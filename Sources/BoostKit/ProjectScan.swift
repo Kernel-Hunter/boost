@@ -178,12 +178,33 @@ public enum ProjectScan {
         "Developer", "Projects", "dev", "code", "src", "Sites", "workspace", "repos",
     ]
 
+    /// Folders in your home folder that are plainly a project: a git repository
+    /// or a package manifest at the top. Listing the home folder raises no
+    /// privacy prompt; the private folders are skipped by name and never opened.
+    static let privateHomeFolders: Set<String> = [
+        "Desktop", "Documents", "Downloads", "Library", "Movies", "Music",
+        "Pictures", "Public", "Applications",
+    ]
+
+    static func homeProjectFolders(home: URL) -> [URL] {
+        guard let kids = try? fm.contentsOfDirectory(
+            at: home, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+        ) else { return [] }
+        let markers = [".git", "package.json", "Package.swift", "Cargo.toml", "Podfile"]
+        return kids.filter { kid in
+            guard !privateHomeFolders.contains(kid.lastPathComponent),
+                  (try? kid.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { return false }
+            return markers.contains { fm.fileExists(atPath: kid.appending(path: $0).path) }
+        }
+    }
+
     /// The folders to scan: the defaults that exist, plus the ones the user
     /// added. Resolved and de-duplicated, so a root listed twice, or reached
     /// through a symlink, is walked once.
     public static func roots(extra: [String] = [], home: URL? = nil) -> [URL] {
         let h = home ?? fm.homeDirectoryForCurrentUser
         var candidates = defaultRootNames.map { h.appending(path: $0) }
+        candidates += homeProjectFolders(home: h)
         candidates += extra.map { URL(fileURLWithPath: $0) }
 
         var seen = Set<String>()

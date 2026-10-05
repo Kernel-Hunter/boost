@@ -76,6 +76,12 @@ public final class Engine: ObservableObject {
         }
     }
 
+    /// Off by default: a number that is always there is one you stop seeing.
+    /// Some people want it anyway, the way iStat Menus and Stats show theirs.
+    @Published var menuBarAlways: Bool = UserDefaults.standard.bool(forKey: "menuBarAlways") {
+        didSet { UserDefaults.standard.set(menuBarAlways, forKey: "menuBarAlways") }
+    }
+
     @AppStorage("resumeOnQuit") var resumeOnQuit = true
     /// Off by default, deliberately. Purging asks for your admin password to
     /// run /usr/sbin/purge as root, and what it does is throw away macOS's

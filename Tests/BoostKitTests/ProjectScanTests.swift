@@ -490,4 +490,19 @@ struct ProjectRootTests {
         #expect(r.cancelled)
         #expect(r.items.isEmpty)
     }
+
+    @Test("Finds projects that sit directly in the home folder, and never opens the private ones")
+    func homeProjects() throws {
+        let home = try makeRoot(); defer { try? fm.removeItem(at: home) }
+        for name in ["myapp", "Desktop", "plain"] {
+            try fm.createDirectory(at: home.appending(path: name), withIntermediateDirectories: true)
+        }
+        try fm.createDirectory(at: home.appending(path: "myapp/.git"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: home.appending(path: "Desktop/.git"), withIntermediateDirectories: true)
+
+        let names = ProjectScan.roots(home: home).map(\.lastPathComponent)
+        #expect(names.contains("myapp"))
+        #expect(!names.contains("Desktop"))
+        #expect(!names.contains("plain"))
+    }
 }

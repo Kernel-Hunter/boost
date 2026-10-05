@@ -34,7 +34,7 @@ public struct MenuBarLabel: View {
     }
 
     private var showsNumber: Bool {
-        engine.mem.level != .easy || !engine.pausedItems.isEmpty
+        engine.menuBarAlways || engine.mem.level != .easy || !engine.pausedItems.isEmpty
     }
 
     private var symbol: String {
