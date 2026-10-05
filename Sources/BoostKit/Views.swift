@@ -40,10 +40,35 @@ enum IconCache {
 // MARK: - Root
 
 public enum Tab: String, CaseIterable, Identifiable {
-    case memory, disk, projects
+    case memory, disk, projects, uninstall
     public var id: String { rawValue }
-    var title: String { self == .memory ? "Memory" : self == .disk ? "Disk" : "Projects" }
-    var symbol: String { self == .memory ? "memorychip" : self == .disk ? "internaldrive" : "hammer" }
+
+    var title: String {
+        switch self {
+        case .memory:    return "Memory"
+        case .disk:      return "Disk"
+        case .projects:  return "Projects"
+        case .uninstall: return "Uninstall"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .memory:    return "memorychip"
+        case .disk:      return "internaldrive"
+        case .projects:  return "hammer"
+        case .uninstall: return "trash.square"
+        }
+    }
+
+    var help: String {
+        switch self {
+        case .memory:    return "Running apps and memory"
+        case .disk:      return "Reclaimable disk space"
+        case .projects:  return "Old build and dependency folders in your projects"
+        case .uninstall: return "Remove an app and what it left behind"
+        }
+    }
 }
 
 /// Which tab is showing, remembered across launches — reopening the app on
@@ -80,6 +105,7 @@ public struct ContentView: View {
                 case .memory: memoryTab
                 case .disk:   DiskView(engine: disk)
                 case .projects: ProjectView(engine: ProjectEngine.shared)
+                case .uninstall: UninstallView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -242,9 +268,7 @@ struct Sidebar: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 10)
-                .help(t == .memory ? "Running apps and memory"
-                      : t == .disk ? "Reclaimable disk space"
-                      : "Old build and dependency folders in your projects")
+                .help(t.help)
                 .accessibilityLabel(t.title)
                 .accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
             }
