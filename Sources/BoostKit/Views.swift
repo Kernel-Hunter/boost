@@ -40,10 +40,10 @@ enum IconCache {
 // MARK: - Root
 
 public enum Tab: String, CaseIterable, Identifiable {
-    case memory, disk
+    case memory, disk, uninstall
     public var id: String { rawValue }
-    var title: String { self == .memory ? "Memory" : "Disk" }
-    var symbol: String { self == .memory ? "memorychip" : "internaldrive" }
+    var title: String { self == .memory ? "Memory" : self == .disk ? "Disk" : "Uninstall" }
+    var symbol: String { self == .memory ? "memorychip" : self == .disk ? "internaldrive" : "trash.square" }
 }
 
 /// Which tab is showing, remembered across launches — reopening the app on
@@ -79,6 +79,7 @@ public struct ContentView: View {
                 switch tabs.tab {
                 case .memory: memoryTab
                 case .disk:   DiskView(engine: disk)
+                case .uninstall: UninstallView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -240,7 +241,7 @@ struct Sidebar: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 10)
-                .help(t == .memory ? "Running apps and memory" : "Reclaimable disk space")
+                .help(t == .memory ? "Running apps and memory" : t == .disk ? "Reclaimable disk space" : "Remove an app and what it left behind")
                 .accessibilityLabel(t.title)
                 .accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
             }
