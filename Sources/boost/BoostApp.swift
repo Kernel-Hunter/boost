@@ -16,7 +16,7 @@ struct BoostApp: App {
             ContentView()
         }
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 980, height: 680)
+        .defaultSize(width: 1040, height: 760)
         .commands {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(after: .toolbar) {

@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// A single on/off value a view can own without @State (see CONTRIBUTING).
+final class Flag: ObservableObject { @Published var on = false }
+
 /// Remembered across launches, like the selected tab.
 final class HistoryRangeSelection: ObservableObject {
     @Published var range: HistoryRange {
@@ -22,7 +25,7 @@ struct HistoryCard: View {
         let range = selection.range
         let points = history.points(for: range, now: now)
 
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack {
                 Text("History")
                     .font(.system(size: 12, weight: .semibold))
@@ -39,10 +42,10 @@ struct HistoryCard: View {
                 Text("Collecting readings. Boost records one a minute and keeps a week, so this fills in as you use your Mac.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
             } else {
                 HistoryChart(points: points, range: range, now: now)
-                    .frame(height: 64)
+                    .frame(height: 46)
                 HStack {
                     Text(range.axisLabel)
                     Spacer()
@@ -54,7 +57,7 @@ struct HistoryCard: View {
                 .foregroundStyle(.tertiary)
             }
         }
-        .padding(.horizontal, 18).padding(.vertical, 14)
+        .padding(.horizontal, 18).padding(.vertical, 11)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
         .overlay {
             RoundedRectangle(cornerRadius: 14)

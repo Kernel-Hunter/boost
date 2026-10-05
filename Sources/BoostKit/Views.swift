@@ -285,6 +285,7 @@ struct Sidebar: View {
 
 struct MemoryHeader: View {
     @ObservedObject var engine: Engine
+    @StateObject private var info = Flag()
 
     private var statusText: String {
         switch engine.mem.level {
@@ -305,7 +306,7 @@ struct MemoryHeader: View {
         HStack(alignment: .center, spacing: 26) {
             ZStack {
                 RadialGauge(progress: engine.mem.pressure, tint: statusColor)
-                    .frame(width: 92, height: 92)
+                    .frame(width: 78, height: 78)
                 VStack(spacing: 0) {
                     Text("\(Int(engine.mem.pressure * 100))")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -347,16 +348,10 @@ struct MemoryHeader: View {
                         .foregroundStyle(engine.mem.swapUsed == 0 ? .secondary : statusColor)
                 }
 
-                if engine.history.count >= 2 {
-                    HStack(spacing: 10) {
-                        Sparkline(values: engine.history.pressureSeries, tint: statusColor)
-                            .frame(width: 120, height: 22)
-                        if let trend = engine.history.trend() {
-                            Text(trend)
-                                .font(.caption)
-                                .foregroundStyle(engine.history.swapStarted ? statusColor : .secondary)
-                        }
-                    }
+                if engine.history.count >= 2, let trend = engine.history.trend() {
+                    Text(trend)
+                        .font(.caption)
+                        .foregroundStyle(engine.history.swapStarted ? statusColor : .secondary)
                 }
             }
 
@@ -382,48 +377,37 @@ struct MemoryHeader: View {
                 .help("Reclaims idle memory without closing apps or asking for a password. "
                     + "Stops on its own if your Mac starts paging to disk.")
 
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 7) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 18, height: 18)
-                            .background(Color.brand.gradient, in: Circle())
-                        Text("How Free Memory actually works")
-                            .font(.system(size: 11, weight: .semibold))
+                HStack(spacing: 6) {
+                    // Only true while the opt-in purge is off: that is the one
+                    // thing Free Memory does that asks for a password.
+                    if engine.purgeOnBoost {
+                        Label("Also purges disk cache (asks for your password)", systemImage: "exclamationmark.circle.fill")
+                            .foregroundStyle(.orange)
+                    } else {
+                        Label("No app closing, no admin password", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
                     }
-                    Text("It briefly asks macOS for memory so the system releases idle pages, then gives that request back. Apps stay open, swap is watched, and it stops before paging becomes the cost.")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 10) {
-                        Label("No app closing", systemImage: "checkmark.circle.fill")
-                        // This claim is only true while the opt-in purge
-                        // setting is off — that's the one thing Free Memory
-                        // does that asks for a password. Saying "no admin
-                        // password" unconditionally while it was about to
-                        // ask for one is exactly the kind of invented
-                        // reassurance this app exists to not do.
-                        if engine.purgeOnBoost {
-                            Label("Also purges disk cache (asks for your password)", systemImage: "exclamationmark.circle.fill")
-                                .foregroundStyle(.orange)
-                        } else {
-                            Label("No admin password", systemImage: "checkmark.circle.fill")
+                    Button {
+                        info.on.toggle()
+                    } label: {
+                        Image(systemName: "questionmark.circle").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("How Free Memory works")
+                    .popover(isPresented: $info.on, arrowEdge: .bottom) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("How Free Memory actually works").font(.system(size: 12, weight: .semibold))
+                            Text("It briefly asks macOS for memory so the system releases idle pages, then gives that request back. Apps stay open, swap is watched, and it stops before paging becomes the cost.")
+                                .font(.system(size: 11)).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
+                        .padding(14).frame(width: 280)
                     }
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.green)
                 }
-                .padding(12)
-                .frame(width: 264, alignment: .leading)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                }
+                .font(.system(size: 10, weight: .medium))
             }
         }
-        .padding(.horizontal, 22).padding(.vertical, 20)
+        .padding(.horizontal, 22).padding(.vertical, 16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
         .overlay {
             RoundedRectangle(cornerRadius: 18)
