@@ -5,6 +5,12 @@ import BoostKit
 struct BoostApp: App {
     @ObservedObject private var engine = Engine.shared
 
+    init() {
+        if let directory = Snapshot.requestedDirectory() {
+            MainActor.assumeIsolated { Snapshot.run(to: directory) }
+        }
+    }
+
     var body: some Scene {
         WindowGroup("Boost") {
             ContentView()
@@ -29,6 +35,7 @@ struct BoostApp: App {
         } label: {
             MenuBarLabel(engine: engine)
         }
+        .menuBarExtraStyle(.window)
 
         Settings {
             BoostSettingsView()
