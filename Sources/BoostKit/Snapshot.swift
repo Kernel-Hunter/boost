@@ -22,6 +22,7 @@ public enum Snapshot {
         NSApp.setActivationPolicy(.accessory)
         // Screenshots show the app as it looks once the welcome card is gone.
         UserDefaults.standard.set(true, forKey: "firstRunDismissed")
+        UserDefaults.standard.set(30, forKey: "projectCutoffDays")
 
         let engine = Engine.shared
         for _ in 0..<4 { engine.refresh() }
@@ -30,10 +31,14 @@ public enum Snapshot {
             let label = scheme == .dark ? "dark" : "light"
             write(MenuBarContent(), size: nil, name: "popover-\(label)", scheme: scheme, settle: 0.5, to: directory)
 
+            write(BoostSettingsView(), size: CGSize(width: 460, height: 760),
+                  name: "settings-\(label)", scheme: scheme, settle: 0.5, to: directory)
+
             for tab in Tab.allCases {
                 UserDefaults.standard.set(tab.rawValue, forKey: "selectedTab")
                 write(ContentView(), size: CGSize(width: 1040, height: 760),
-                      name: "\(tab.rawValue)-\(label)", scheme: scheme, settle: 3.0, to: directory)
+                      name: "\(tab.rawValue)-\(label)", scheme: scheme,
+                      settle: tab == .memory ? 3.0 : 12.0, to: directory)
             }
         }
         exit(0)

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boost, a free Mac memory and disk app</title>
+<meta name="description" content="Boost is a free, open source menu bar app for macOS. See what is using your memory, pause apps you are not using, and clean up caches and leftovers safely.">
+<meta property="og:title" content="Boost, a free Mac memory and disk app">
+<meta property="og:description" content="A free, open source menu bar app for macOS. Memory history, pause apps, safe disk cleanup, and an uninstaller.">
+<meta property="og:image" content="https://kernel-hunter.github.io/boost/images/popover.png">
+<meta name="theme-color" content="#101514">
+<style>
+:root {
+  --bg: #fbfcfc; --fg: #14201d; --muted: #5b6b66; --card: #ffffff; --line: #e1e8e6;
+  --brand: #159e86; --brand-fg: #ffffff; --code: #eef3f2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101514; --fg: #e8f0ee; --muted: #93a6a1; --card: #171e1c; --line: #26302e;
+    --brand: #3fd1b0; --brand-fg: #08130f; --code: #1c2523;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--brand); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+nav .name { font-weight: 700; font-size: 20px; }
+nav a.gh { color: var(--fg); text-decoration: none; font-size: 15px; border: 1px solid var(--line);
+  padding: 7px 14px; border-radius: 999px; }
+.hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 48px 0 72px; }
+h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1.08; margin: 0 0 18px; letter-spacing: -0.02em; }
+.lead { font-size: 20px; color: var(--muted); margin: 0 0 28px; }
+.install {
+  display: flex; align-items: center; gap: 10px; background: var(--code); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-x: auto; white-space: nowrap;
+}
+.install button {
+  margin-left: auto; font-family: -apple-system, sans-serif; font-size: 13px;
+  background: var(--brand); color: var(--brand-fg); border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer;
+}
+.sub { margin-top: 12px; font-size: 14px; color: var(--muted); }
+.shot { display: flex; justify-content: center; }
+.shot img { width: min(340px, 100%); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.28); }
+section { padding: 56px 0; border-top: 1px solid var(--line); }
+h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -0.01em; }
+.sec-lead { color: var(--muted); margin: 0 0 32px; max-width: 640px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.card h3 { margin: 0 0 6px; font-size: 17px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.big { width: 100%; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.2); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+.two img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+  border-radius: 10px; padding: 16px 18px; color: var(--muted); font-size: 15px; }
+footer { padding: 36px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+@media (max-width: 800px) {
+  .hero { grid-template-columns: 1fr; padding-top: 24px; }
+  .grid, .two { grid-template-columns: 1fr; }
+  .shot { order: -1; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="name">Boost</div>
+    <a class="gh" href="https://github.com/Kernel-Hunter/boost">View on GitHub</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1>See what is eating your Mac's memory, and do something about it.</h1>
+      <p class="lead">Boost is a free, open source menu bar app. It shows memory pressure and history, pauses apps you are not using, and cleans up caches and leftovers without touching anything risky.</p>
+      <div class="install"><code id="cmd">brew install --cask kernel-hunter/boost/boost</code><button id="copy">Copy</button></div>
+      <p class="sub">macOS 14 or later. Apple Silicon and Intel. No account, no network access, no subscription.</p>
+    </div>
+    <div class="shot"><img src="images/popover.png" alt="Boost's menu bar popover showing memory pressure, a graph, and the apps using the most memory"></div>
+  </header>
+
+  <section>
+    <h2>What it does</h2>
+    <p class="sec-lead">The parts of the paid Mac utilities that most people use, in one small app.</p>
+    <div class="grid">
+      <div class="card"><h3>Menu bar popover</h3><p>Pressure, swap, cached and compressed memory, and your five biggest apps. Pause or quit one without opening a window.</p></div>
+      <div class="card"><h3>Memory history</h3><p>A reading every minute, kept for a week. Chart it over 2 hours, 24 hours or 7 days and see when your Mac started swapping.</p></div>
+      <div class="card"><h3>Pause, don't quit</h3><p>Freeze an app and its helpers. It uses no CPU and returns exactly where you left it. Choose apps to pause on their own when idle.</p></div>
+      <div class="card"><h3>Useful alerts</h3><p>A notice when swap passes 1, 2 or 4 GB, or when memory stays tight for a minute, with the app responsible.</p></div>
+      <div class="card"><h3>Safe disk cleanup</h3><p>Rebuildable caches only. Downloads, iOS backups and anything behind a privacy prompt are left alone. Nothing is ticked for you.</p></div>
+      <div class="card"><h3>Projects and Uninstall</h3><p>Find old node_modules and build folders. Remove an app along with the files it left in your Library. Both go to the Trash.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Real screens, real data</h2>
+    <p class="sec-lead">These are the actual views, rendered from the app.</p>
+    <img class="big" src="images/memory.png" alt="Boost's memory tab with a pressure gauge, history chart and grouped app list">
+    <div class="two">
+      <img src="images/disk.png" alt="Boost's disk tab listing reclaimable caches">
+      <img src="images/uninstall.png" alt="Boost's uninstall tab listing installed apps">
+    </div>
+  </section>
+
+  <section>
+    <h2>Honest about memory</h2>
+    <p class="sec-lead">Most cleaners make a big number smaller. Boost explains what the number means first.</p>
+    <table>
+      <tr><th>Typical cleaner</th><th>Boost</th></tr>
+      <tr><td>Shows cached memory as a problem</td><td>Shows it as available, because macOS gives it back on demand</td></tr>
+      <tr><td>Always has something to clean</td><td>Tells you when there is nothing to do</td></tr>
+      <tr><td>Ticks everything for you</td><td>Ticks nothing</td></tr>
+      <tr><td>Deletes permanently</td><td>Moves to the Trash, except the Disk tab, which says so</td></tr>
+      <tr><td>Wants an account and a subscription</td><td>Free, GPL-3.0, no network access at all</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Install</h2>
+    <p class="sec-lead">Homebrew is the easiest way. You can also build it from source, which takes about a minute.</p>
+    <div class="install"><code>git clone https://github.com/Kernel-Hunter/boost.git &amp;&amp; cd boost &amp;&amp; ./Scripts/build.sh</code></div>
+    <p class="note" style="margin-top:20px"><strong>About signing.</strong> Boost is signed with a local certificate and is not notarized, because that needs a paid Apple Developer account. The Homebrew cask and a source build both avoid the Gatekeeper warning. If you download the zip by hand, right-click the app and choose Open.</p>
+  </section>
+
+  <footer>
+    Boost is GPL-3.0 and built by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>.
+    <a href="https://github.com/Kernel-Hunter/boost">Source</a> &middot;
+    <a href="https://github.com/Kernel-Hunter/boost/releases">Releases</a> &middot;
+    <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md">Security</a>
+  </footer>
+</div>
+<script>
+document.getElementById('copy').addEventListener('click', function () {
+  var b = this;
+  navigator.clipboard.writeText(document.getElementById('cmd').textContent).then(function () {
+    b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+  });
+});
+</script>
+</body>
+</html>

@@ -166,6 +166,7 @@ func fmtBytes(_ b: UInt64) -> String {
     if gb >= 1 { return String(format: "%.2f GB", gb) }
     let mb = Double(b) / 1_048_576
     if mb >= 1 { return String(format: "%.0f MB", mb) }
+    if b >= 1024 { return String(format: "%.0f KB", Double(b) / 1024) }
     return "\(b) B"
 }
 

@@ -1,177 +1,133 @@
 # Boost
 
-Freeze the apps you're not using, then bring them back exactly as they were.
-Boost is a free memory and disk utility for macOS that tells you the truth.
+A free, open source Mac app for memory and disk space. It lives in your menu
+bar, shows what is using your RAM, freezes apps you are not using, and finds
+caches and leftovers that are safe to remove.
 
-![Boost's memory tab: a radial pressure gauge, 11.56 GB in use of 16.00 GB, and
-a card list of running apps grouped with their helper processes](docs/images/memory.png)
+If you have looked at CleanMyMac, iStat Menus or AppCleaner and did not want a
+subscription, this covers the parts most people actually use.
+
+<p align="center">
+  <img src="docs/images/popover.png" alt="Boost's menu bar popover: a memory pressure gauge, a graph, the apps using the most memory, and free disk space" width="340">
+</p>
 
 ```bash
 brew install --cask kernel-hunter/boost/boost
 ```
 
-Or build it yourself, which takes about as long and involves no Gatekeeper
-at all:
+Or build it yourself, which takes about as long and involves no Gatekeeper at
+all:
 
 ```bash
 git clone https://github.com/Kernel-Hunter/boost.git
 cd boost && ./Scripts/build.sh
 ```
 
-macOS 14+, Apple Silicon and Intel. Every build is universal, one binary for
-both. Builds with Command Line Tools. Xcode is not required.
-
-If Boost is useful to you, a star helps other people find it.
-
-Boost frees memory without closing apps, freezes apps and brings them back
-exactly as they were, and finds disk space that is genuinely safe to reclaim.
-It is the macOS answer to tools like Mem Reduct on Windows, built around what
-macOS actually allows rather than a fake cleaner number.
-
-[![Watch the 19-second demo](https://github.com/Kernel-Hunter/boost/releases/download/v1.1.0/brag.jpg)](https://github.com/Kernel-Hunter/boost/releases/download/v1.1.0/brag.mp4)
+macOS 14 or later, Apple Silicon and Intel, one universal binary. It builds with
+Command Line Tools, so Xcode is not required. If Boost is useful to you, a star
+helps other people find it.
 
 > **On signing.** Boost is signed with a local certificate, not notarized,
 > because notarizing needs a paid Apple Developer account. A downloaded `.zip`
-> will be stopped by Gatekeeper. The cask clears the quarantine flag for you,
-> and building from source never sets one, so use one of those two.
+> will be stopped by Gatekeeper the first time. The cask clears the quarantine
+> flag for you, and building from source never sets one, so use one of those
+> two. If you downloaded the zip anyway, right-click the app and choose Open.
 
----
+![Boost's memory tab: a pressure gauge, a history chart, and running apps grouped with their helper processes](docs/images/memory.png)
 
-## Why another one of these
+## What you get
 
-Most "Mac cleaner" apps work by showing you a large number and offering to make
-it smaller. The number is usually cached memory, which is memory macOS is
-*using well*, and making it smaller makes your Mac slower.
+**A menu bar popover.** Click the icon and you see memory pressure, a short
+graph, swap, how much is cached and compressed, and the five apps using the most
+memory. Point at one to pause or quit it. Free Memory is one click away, and free
+disk space sits at the bottom. The icon shows a number only when memory is
+getting busy, or always if you turn that on.
 
-Boost is built the other way round:
+**History.** Boost records a reading every minute and keeps a week. The Memory
+tab charts it over 2 hours, 24 hours or 7 days, with the peak, the average and
+how many times your Mac went into swap. That answers "was it slow at 3pm
+yesterday" instead of leaving you to guess.
 
-- **It tells you when there is nothing to do.** If swap is at zero, the header
-  says your Mac is coping and closing things buys you little.
-- **It explains what a figure means** before offering to change it. Cached
-  memory is shown as available, because it is.
-- **It refuses the impressive-looking options.** The disk cleaner ignores your
-  Downloads folder and your iPhone backups. They would score well and they are
-  not safe.
-- **Free Memory is the primary action.** It asks macOS to reclaim idle pages,
-  watches swap while it runs, and tells you what actually happened.
+**Pause apps instead of quitting them.** Pause freezes an app and its helpers.
+It uses no CPU, keeps its state, and comes back exactly where it was. Pick apps
+to pause automatically after they sit in the background for 5 to 60 minutes.
+Boost wakes each one the moment you switch to it. If Boost crashes or is killed,
+a small watchdog resumes everything it froze, so nothing stays frozen.
 
-## Free Memory, compared with Mem Reduct
+**Alerts that mean something.** Boost can tell you when swap passes 1, 2 or 4 GB,
+and when memory has stayed tight for a full minute, naming the app using the
+most. A spike that passes on its own is ignored.
 
-Mem Reduct works by calling `EmptyWorkingSet`, a Windows API that lets one
-process force another process's pages out to the pagefile. macOS has no
-equivalent. No public API lets a third-party app reach into another process
-and push its memory to disk. That's confirmed in
-[Apple's own kernel source](https://github.com/apple-oss-distributions/xnu/blob/main/doc/vm/memorystatus_notify.md),
-not a limitation of this app.
+**Disk cleanup that refuses the risky parts.** It finds caches that the tool
+that made them will rebuild: Homebrew, npm, pip, uv, Cargo, Gradle, Xcode
+DerivedData, simulator caches, app caches, logs. It will not touch Downloads,
+`node_modules` found by name, or iOS backups.
 
-It's also not a technique worth copying if it existed. Apple redesigned macOS
-around memory compression specifically to avoid swap: reading a compressed
-page back from RAM is far faster than reading from disk, even an SSD, and
-repeated swap writes wear the drive down. Mem Reduct's approach predates that
-redesign. On today's macOS, deliberately forcing pages to swap would make the
-Mac slower, not lighter.
+![Boost's disk tab, listing reclaimable caches with an explanation of what each one is and nothing ticked by default](docs/images/disk.png)
 
-So Boost uses the route macOS actually offers: it briefly asks the system for
-memory using Apple's own `memory_pressure` tool, which nudges the kernel to
-release idle pages and compress what it can. Boost then gives that request
-back, checks the before and after readings, and reports only the memory that
-stopped being used.
+**Projects.** Finds `node_modules`, Rust `target`, SwiftPM `.build`, Python
+virtualenvs, CocoaPods and similar folders in projects you have not touched for
+30 to 180 days. A folder is listed only when the manifest next to it proves what
+it is. Everything goes to the Trash.
 
-That means:
+**Uninstall.** Pick an app, or drop one onto the window, and Boost lists what it
+left in your Library with sizes before anything moves. Only exact matches are
+listed. Everything goes to the Trash, and there is an Undo.
 
-- It does not close apps.
-- It does not delete files.
-- It does not need your admin password, unless you turn on the optional disk
-  cache purge yourself.
-- It stops early if swap starts growing, because paging to disk would cost more
-  than the reclaim is worth.
+![Boost's uninstall tab: a searchable list of installed apps with sizes and when each was last used](docs/images/uninstall.png)
 
-Expect a few hundred MB to around a gigabyte on a typical run. That's not a
-bug: even `purge`, Apple's own and more aggressive disk-cache tool, nets a
-similar range on Apple Silicon. If your Mac genuinely isn't short on memory,
-there isn't much sitting idle to give back, on Windows or on macOS. If you
-want Boost to push harder anyway, Settings has an aggressive mode that asks
-for memory more forcefully. It's off by default and says why in the same
-screen: pushed far enough, it can be the reason the kernel decides to kill
-something on its own, with no warning from Boost first.
+**The small things.** Start at login. A Dock badge. An optional global shortcut
+(⌥⌘B). Sort by name, memory or CPU. Reveal in Finder. Light and dark mode.
 
-## What it does
+![Boost's Settings window](docs/images/settings.png)
 
-### Memory
+## Why it is built this way
 
-| | | Reversible |
-| --- | --- | --- |
-| **Free Memory** | Reclaims idle memory through macOS without closing apps. This is the main feature. | No app state changes |
-| **Pause** | `SIGSTOP`s an app and every helper it spawned. Zero CPU, state kept in place, and macOS is free to swap its pages out. | **Yes** |
-| **Close** | Quits it properly. Unsaved work prompts you first. | No |
-| **Purge disk cache** | Optional advanced setting. Asks for your password and is rarely the right answer. | No |
+Most Mac cleaners show you a big number and offer to make it smaller. The number
+is usually cached memory, which macOS is using well, and shrinking it makes your
+Mac slower. Boost does the opposite on purpose.
 
-**Free Memory is the main button.** It is for the moment your Mac feels heavy
-but you do not want to close your work. Pause is the reversible backup plan:
-freeze what you are not using, do your heavy work, hit Resume All, and
-everything comes back mid-scroll. Resume All sweeps the whole system, so nothing
-can be stranded frozen if Boost crashes or is quit.
+- It tells you when there is nothing to do. If swap is at zero, the header says
+  your Mac is coping.
+- It explains a figure before offering to change it. Cached memory is shown as
+  available, because it is.
+- Nothing is ticked for you. Removing files should be a decision.
+- Projects and Uninstall move things to the Trash, so you can put them back. The
+  Disk tab deletes, and says so on screen.
+- Two safety layers guard deletion: an allowlist of what may be scanned, and a
+  second check of the resolved path right before each removal. A symlink in a
+  cache that points at your documents is how tools like this destroy data, and
+  there is a test that builds exactly that trap.
 
-An app and all its helpers count as one row. A browser is one entry with its
-real total, not thirty mystery processes.
+### How Free Memory works
 
-A **sparkline and a sentence** say which way memory has been going, and a badge
-names any app whose floor keeps rising, the shape of a leak, which is
-invisible in a single reading. Big is not the signal; a browser is supposed to
-be big.
+Windows tools like Mem Reduct call `EmptyWorkingSet`, which lets one process
+push another process's pages to the pagefile. macOS has no public equivalent, as
+[Apple's kernel source](https://github.com/apple-oss-distributions/xnu/blob/main/doc/vm/memorystatus_notify.md)
+shows. It also would not help. macOS compresses memory instead of swapping
+early, and reading a compressed page from RAM is much faster than reading it back
+from an SSD.
 
-### Disk
+So Boost uses what macOS does offer. It asks the system for memory through
+Apple's own `memory_pressure` tool, which nudges the kernel to release idle pages
+and compress what it can. Then it checks the readings before and after and
+reports only what actually stopped being used. It does not close apps, delete
+files or ask for a password, and it stops early if swap starts growing.
 
-Finds caches that the tool which made them will simply rebuild: Homebrew, npm,
-pip, uv, Cargo, Gradle, Xcode DerivedData, simulator caches, app caches, logs,
-Trash.
-
-What it will not touch is the point:
-
-- Your **Downloads** folder
-- Any project's **node_modules**
-- **iOS device backups**
-- Anything behind a privacy prompt. It skips Music, Photos and Safari caches
-  rather than ask for access to your media library, because a disk cleaner that
-  asks for that is indistinguishable from the ones that deserve the suspicion
-
-![Boost's disk tab, listing reclaimable caches with an explanation of what each
-one is and nothing ticked by default](docs/images/disk.png)
-
-Nothing is ticked for you. This deletes files, so opting in should be a decision
-rather than the default that happens to be on screen.
-
-Two independent safety layers: an allowlist of what may be scanned, and a
-second check of the **resolved** path immediately before every deletion. A
-symlink sitting in a cache and pointing at your documents is how tools like
-this destroy data; there is a test that builds exactly that trap.
-
-### Elsewhere
-
-- **Menu bar** readout, showing the number only when it is worth reading
-- **Dock icon badge**, the same idea applied to the one place you can see it
-  without opening Boost at all
-- **⌥⌘B** from any app (off by default, because claiming a system-wide shortcut is not
-  something an app should help itself to)
-- **Sort the list** by name, memory, or CPU, in either direction
-- **Reveal in Finder** from any row's menu
-- **Close button quits the app**, for apps that stay running with no windows
-- **Warn me when swap climbs**: tells you, and can pause what is ticked. It
-  can never close anything, and a test enforces that
-- **Settings (⌘,)** holds all of the above, plus the aggressive reclaim mode
-  and the optional disk cache purge
-
-![Boost's Settings window: window behaviour, the aggressive reclaim toggle
-with its trade-off spelled out, and the swap-warning rule](docs/images/settings.png)
+Expect a few hundred MB to around a gigabyte on a typical run. If your Mac is not
+short on memory, there is little sitting idle to give back. Settings has an
+aggressive mode that asks harder. It is off by default and warns you why: pushed
+far enough, the kernel may kill something on its own.
 
 ## Permissions
 
 | What | Why | When |
 | --- | --- | --- |
-| None | Reading the process table, memory stats, and signalling your own apps | Always |
+| None | Reading the process table and memory stats, and signalling your own apps | Always |
 | Accessibility | Counting an app's open windows | Only for "close button quits the app" |
-| Notifications | The swap warning | Only if you enable it |
-| Admin password | `/usr/sbin/purge` | Only if you enable the optional disk-cache purge |
+| Notifications | The swap and pressure alerts | Only if you turn them on |
+| Login item | Starting Boost at login | Only if you turn it on |
+| Admin password | `/usr/sbin/purge` | Only if you turn on the optional disk cache purge |
 
 No analytics, no telemetry, no update check, no network access of any kind.
 There is nothing to opt out of. See [SECURITY.md](SECURITY.md).
@@ -199,21 +155,23 @@ file.
 ```
 
 Use `Scripts/test.sh` rather than `swift test`. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the two flags it needs and why their
-error messages blame the wrong thing.
+[CONTRIBUTING.md](CONTRIBUTING.md) for the two flags it needs and why their error
+messages blame the wrong thing.
+
+To regenerate the screenshots in this README from the real views:
+
+```bash
+swift build && .build/debug/boost --snapshot docs/snapshots
+```
 
 ## Is it free
 
-Yes, and the parts that matter always will be. Safety, honest readings, and
-anything that already shipped free are not going behind a paywall. See the
-rules written into [`Pro.swift`](Sources/BoostKit/Pro.swift). If a paid tier
-ever appears it will be for things that cost something to run, and the commit
-that introduces it will say so plainly.
+Yes, and the parts that matter always will be. Safety, honest readings and
+anything that already shipped free are not going behind a paywall. See the rules
+written into [`Pro.swift`](Sources/BoostKit/Pro.swift).
 
 ## Licence
 
 GPL-3.0. See [LICENSE](LICENSE).
 
 Built by [Karim Masmoudi](https://github.com/Kernel-Hunter).
-
-If Boost is useful to you, a star helps other people find it. Thank you.
