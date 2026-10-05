@@ -23,6 +23,8 @@ public enum Snapshot {
         // Screenshots show the app as it looks once the welcome card is gone.
         UserDefaults.standard.set(true, forKey: "firstRunDismissed")
         UserDefaults.standard.set(30, forKey: "projectCutoffDays")
+        // Screenshots show the short range until a Mac has a day of readings.
+        UserDefaults.standard.set(HistoryRange.twoHours.rawValue, forKey: "historyRange")
 
         let engine = Engine.shared
         for _ in 0..<4 { engine.refresh() }
