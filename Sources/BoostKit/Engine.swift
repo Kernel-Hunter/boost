@@ -49,6 +49,12 @@ public final class Engine: ObservableObject {
     /// are going rather than only where they are.
     @Published private(set) var history = MemoryHistory()
     private var growth = AppGrowth()
+    /// A week of one-a-minute readings that survives quitting. Not @Published:
+    /// it changes once a minute and the views already redraw every refresh.
+    private(set) var longHistory = HistoryStore.load()
+    private var lastHistorySave = Date()
+    /// Processes Boost itself froze, recorded on disk so a crash cannot strand them.
+    private var ownPaused: Set<pid_t> = []
 
     /// Backed by UserDefaults by hand rather than @AppStorage, because @AppStorage
     /// inside an ObservableObject doesn't publish changes, and the permission
@@ -104,6 +110,7 @@ public final class Engine: ObservableObject {
 
     init() {
         loadKeepList()
+        Lease.recoverStranded()
         // Safety net: never leave processes frozen because Boost went away.
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification, object: nil, queue: .main
@@ -168,6 +175,11 @@ public final class Engine: ObservableObject {
         mem = SystemScan.memory()
         history.record(MemorySample(at: Date(), used: mem.used, cached: mem.cached,
                                     swap: mem.swapUsed, pressure: mem.pressure))
+        if longHistory.record(at: Date(), pressure: mem.pressure, swapBytes: mem.swapUsed),
+           Date().timeIntervalSince(lastHistorySave) > 300 {
+            HistoryStore.save(longHistory)
+            lastHistorySave = Date()
+        }
         updateDockBadge()
         if autoQuitOnClose {                       // you may grant access while we run
             let granted = WindowWatcher.hasPermission
@@ -177,6 +189,11 @@ public final class Engine: ObservableObject {
         growth.record(items.map { (id: $0.id, bytes: $0.rssBytes) })
         Rules.shared.evaluate(swapBytes: mem.swapUsed,
                               pause: { [weak self] in self?.pauseSelected() })
+        let biggest = items.filter { !$0.isProtected && $0.category != .system }
+            .max { $0.rssBytes < $1.rssBytes }
+        Rules.shared.evaluateSustained(tight: mem.level == .tight,
+                                       culprit: biggest.map { ($0.name, $0.rssBytes) })
+        AutoPause.shared.tick(items: items, engine: self)
         let live = Set(items.map(\.id))
         selection.formIntersection(live)           // forget things that have exited
         // Tick anything new that qualifies, unless you deliberately unticked it.
@@ -304,11 +321,16 @@ public final class Engine: ObservableObject {
     func pause(_ item: Item) {
         guard !item.isProtected else { return }
         for pid in item.pids { kill(pid, SIGSTOP) }
+        ownPaused.formUnion(item.pids)
+        Lease.write(ownPaused)
+        Lease.armWatchdog()
     }
 
     /// Children first, then parent — the reverse of pausing.
     func resume(_ item: Item) {
         for pid in item.pids.reversed() { kill(pid, SIGCONT) }
+        ownPaused.subtract(item.pids)
+        Lease.write(ownPaused)
     }
 
     func quit(_ item: Item, force: Bool = false) {
@@ -380,6 +402,8 @@ public final class Engine: ObservableObject {
         for (pid, s) in procs where s.stopped {
             if kill(pid, SIGCONT) == 0 { woken += 1 }
         }
+        ownPaused.removeAll()
+        Lease.write([])
         report(woken == 0 ? "Nothing was paused." : "Resumed \(woken) \(woken == 1 ? "process" : "processes").")
         refresh()
     }
@@ -516,7 +540,10 @@ public final class Engine: ObservableObject {
     }
 
     func applicationWillTerminate() {
-        guard resumeOnQuit else { return }
+        HistoryStore.save(longHistory)
+        // Leaving things paused was the user's choice, so the crash watchdog
+        // must not undo it: an empty lease tells it there is nothing to wake.
+        guard resumeOnQuit else { Lease.write([]); return }
         let procs = SystemScan.sampleProcesses()
         for (pid, s) in procs where s.stopped { kill(pid, SIGCONT) }
     }

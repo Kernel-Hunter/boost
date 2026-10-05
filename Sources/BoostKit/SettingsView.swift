@@ -6,12 +6,21 @@ import SwiftUI
 public struct BoostSettingsView: View {
     @ObservedObject var engine: Engine = .shared
     @ObservedObject private var rules = Rules.shared
+    @ObservedObject private var autoPause = AutoPause.shared
+    @StateObject private var login = LoginItemModel()
 
     public init() {}
 
     public var body: some View {
         Form {
-            Section("Window & Shortcuts") {
+            Section("General") {
+                Toggle("Start Boost at login", isOn: Binding(
+                    get: { login.enabled },
+                    set: { login.set($0) }
+                ))
+                if let problem = login.problem {
+                    Text(problem).font(.caption).foregroundStyle(.orange)
+                }
                 Toggle("Close button quits the app", isOn: $engine.autoQuitOnClose)
                 Toggle("Global shortcut (⌥⌘B)", isOn: $engine.globalHotkey)
                     .help("Opens Boost and closes what is ticked, from any app.")
@@ -19,13 +28,43 @@ public struct BoostSettingsView: View {
                     .help("Nothing is ever left frozen because Boost went away.")
             }
 
+            Section("Sleeping apps") {
+                Toggle("Pause apps I leave alone", isOn: $autoPause.enabled)
+                    .help("Freezes the apps listed below after they have been in the "
+                        + "background for a while, and wakes each one the moment you "
+                        + "switch to it. Nothing is closed.")
+
+                if autoPause.enabled {
+                    Picker("After", selection: $autoPause.idleMinutes) {
+                        ForEach(AutoPause.idleChoices, id: \.self) { Text("\($0) minutes").tag($0) }
+                    }
+                }
+
+                if autoPause.listed.isEmpty {
+                    Text("No apps listed. In the Memory tab, right-click an app and choose "
+                        + "Auto-pause when idle. Leave out anything that plays audio or "
+                        + "syncs in the background.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    ForEach(autoPause.listed.sorted(by: { $0.value < $1.value }), id: \.key) { id, name in
+                        HStack {
+                            Text(name)
+                            Spacer()
+                            Button("Remove") { autoPause.remove(id) }
+                                .buttonStyle(.borderless)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
             Section("Free Memory") {
                 VStack(alignment: .leading, spacing: 6) {
                     Toggle("Reclaim more aggressively", isOn: $engine.aggressiveReclaim)
                     Text("Pushes memory_pressure to `critical` instead of `warn`. It "
                         + "can reclaim more, and it can also be the reason the kernel "
-                        + "decides to kill something on its own — with no dialog from "
-                        + "Boost, no warning first. The instant-stop on swap growth "
+                        + "decides to kill something on its own, with no dialog from "
+                        + "Boost and no warning first. The instant-stop on swap growth "
                         + "still runs; it just isn't guaranteed to catch this in time. "
                         + "Off is the setting for almost everyone.")
                         .font(.caption)
@@ -58,10 +97,20 @@ public struct BoostSettingsView: View {
                         ForEach(RuleAction.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                 }
+
+                Toggle("Warn me when memory stays tight", isOn: Binding(
+                    get: { rules.sustainedEnabled },
+                    set: { on in
+                        rules.sustainedEnabled = on
+                        if on { rules.requestPermission() }
+                    }
+                ))
+                .help("Tells you once pressure has stayed high for a minute, and which "
+                    + "app is using the most. A spike that passes on its own is ignored.")
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440)
+        .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
     }
 }

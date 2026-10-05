@@ -70,6 +70,61 @@ public final class Rules: ObservableObject {
 
     private init() {}
 
+    // MARK: - Sustained pressure
+
+    /// Off until asked for, like the swap rule.
+    @Published public var sustainedEnabled: Bool = UserDefaults.standard.bool(forKey: "sustainedEnabled") {
+        didSet { UserDefaults.standard.set(sustainedEnabled, forKey: "sustainedEnabled") }
+    }
+
+    /// How long pressure must stay high before it is worth interrupting you.
+    /// An alert for a spike that ended before you could read it is the kind
+    /// people learn to ignore.
+    public var sustainedSeconds: TimeInterval = 60
+    private var tightSince: Date?
+    private var sustainedFired = false
+    private var lastSustained: Date?
+
+    /// Says which app is the biggest while pressure is high, because "memory is
+    /// tight" is not something you can act on and "Chrome is using 5 GB" is.
+    /// Fires once per stretch of high pressure, and not again within the cooldown.
+    @discardableResult
+    public func evaluateSustained(tight: Bool, culprit: (name: String, bytes: UInt64)?,
+                                  now: Date = Date(),
+                                  notify: ((String) -> Void)? = nil) -> Bool {
+        guard sustainedEnabled, tight else {
+            tightSince = nil
+            sustainedFired = false
+            return false
+        }
+        let since = tightSince ?? now
+        tightSince = since
+        guard !sustainedFired, now.timeIntervalSince(since) >= sustainedSeconds else { return false }
+        if let last = lastSustained, now.timeIntervalSince(last) < cooldown { return false }
+
+        sustainedFired = true
+        lastSustained = now
+        var body = "Memory has been under pressure for over a minute."
+        if let culprit { body += " \(culprit.name) is using \(fmtBytes(culprit.bytes))." }
+        (notify ?? { self.postSustained($0) })(body)
+        return true
+    }
+
+    func resetSustainedForTesting() {
+        tightSince = nil
+        sustainedFired = false
+        lastSustained = nil
+    }
+
+    private func postSustained(_ body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "Your Mac is short on memory"
+        content.body = body
+        content.sound = .default
+        UNUserNotificationCenter.current()
+            .add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+    }
+
     // MARK: - Evaluation
 
     /// Called on every refresh. Decides whether this is a moment worth speaking

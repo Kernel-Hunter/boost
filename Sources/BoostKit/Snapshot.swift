@@ -23,6 +23,20 @@ public enum Snapshot {
         for (scheme, label) in [(ColorScheme.dark, "dark"), (ColorScheme.light, "light")] {
             write(MenuBarContent(), name: "popover-\(label)", scheme: scheme, to: directory)
         }
+
+        // Layout check only: a made-up day, never used for screenshots that
+        // claim to show a real Mac.
+        var demo = LongHistory()
+        let now = Date()
+        for m in 0..<(24 * 60) {
+            let t = Double(m) / 60
+            let wave = 0.55 + 0.18 * sin(t / 2.2) + (m % 233 < 14 ? 0.22 : 0)
+            demo.record(at: now.addingTimeInterval(Double(m - 24 * 60) * 60),
+                        pressure: min(0.98, wave), swapBytes: m % 233 < 14 ? 1_500_000_000 : 0)
+        }
+        for (scheme, label) in [(ColorScheme.dark, "dark"), (ColorScheme.light, "light")] {
+            write(HistoryCard(history: demo).frame(width: 760), name: "history-\(label)", scheme: scheme, to: directory)
+        }
         exit(0)
     }
 

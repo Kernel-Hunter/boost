@@ -111,6 +111,7 @@ public struct ContentView: View {
     private var memoryTab: some View {
         VStack(spacing: 0) {
             MemoryHeader(engine: engine)
+            HistoryCard(history: engine.longHistory)
             FilterBar(engine: engine)
             Divider().opacity(0.5)
             if engine.needsAccessibility { AccessibilityBanner(engine: engine) }
@@ -614,6 +615,7 @@ struct ItemRow: View {
     @ObservedObject var engine: Engine
     let item: Item
     @StateObject private var hover = RowHover()
+    @ObservedObject private var autoPause = AutoPause.shared
 
     private var locked: Bool { item.isProtected }
     private var kept: Bool { engine.isKept(item) }
@@ -636,6 +638,11 @@ struct ItemRow: View {
                         .font(.system(size: 13, weight: .medium))
                         .lineLimit(1)
                     if item.isPaused { badge("Paused", .orange) }
+                    if autoPause.isListed(item) {
+                        badge("Sleeps", .teal)
+                            .help("Boost pauses this after \(autoPause.idleMinutes) minutes in the "
+                                + "background, and wakes it when you switch to it.")
+                    }
                     if locked { badge("Protected", .secondary) }
                     else if kept { badge("Kept", .blue) }
                     // Big is not a problem — a browser is supposed to be big.
@@ -686,6 +693,10 @@ struct ItemRow: View {
                 item.isPaused ? engine.resume(item) : engine.pause(item)
             }.disabled(locked)
             Button("Close") { engine.quit(item) }.disabled(locked)
+            Divider()
+            Button(autoPause.isListed(item) ? "Stop auto-pausing" : "Auto-pause when idle") {
+                autoPause.toggle(item)
+            }.disabled(locked)
             if let path = item.bundlePath {
                 Divider()
                 Button("Reveal in Finder") {
@@ -896,9 +907,11 @@ struct Sparkline: View {
                 }
 
                 // Fill first, line over it, so the stroke stays crisp.
+                // addLines starts a new subpath, so the fill is built point by
+                // point; otherwise it closes as a diagonal wedge.
                 Path { p in
                     p.move(to: CGPoint(x: 0, y: h))
-                    p.addLines(points)
+                    for point in points { p.addLine(to: point) }
                     p.addLine(to: CGPoint(x: w, y: h))
                     p.closeSubpath()
                 }
