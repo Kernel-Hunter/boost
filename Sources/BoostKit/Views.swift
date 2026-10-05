@@ -40,10 +40,10 @@ enum IconCache {
 // MARK: - Root
 
 public enum Tab: String, CaseIterable, Identifiable {
-    case memory, disk
+    case memory, disk, projects
     public var id: String { rawValue }
-    var title: String { self == .memory ? "Memory" : "Disk" }
-    var symbol: String { self == .memory ? "memorychip" : "internaldrive" }
+    var title: String { self == .memory ? "Memory" : self == .disk ? "Disk" : "Projects" }
+    var symbol: String { self == .memory ? "memorychip" : self == .disk ? "internaldrive" : "hammer" }
 }
 
 /// Which tab is showing, remembered across launches — reopening the app on
@@ -79,6 +79,7 @@ public struct ContentView: View {
                 switch tabs.tab {
                 case .memory: memoryTab
                 case .disk:   DiskView(engine: disk)
+                case .projects: ProjectView(engine: ProjectEngine.shared)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -241,7 +242,9 @@ struct Sidebar: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 10)
-                .help(t == .memory ? "Running apps and memory" : "Reclaimable disk space")
+                .help(t == .memory ? "Running apps and memory"
+                      : t == .disk ? "Reclaimable disk space"
+                      : "Old build and dependency folders in your projects")
                 .accessibilityLabel(t.title)
                 .accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
             }
