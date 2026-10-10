@@ -35,6 +35,8 @@ helps other people find it.
 
 ![Boost's memory tab: a pressure gauge, a history chart, and running apps grouped with their helper processes](docs/images/memory.png)
 
+[Watch the 30-second overview (with sound)](docs/boost-ad.mp4)
+
 ## What you get
 
 **A menu bar popover.** Click the icon and you see memory pressure, a short
