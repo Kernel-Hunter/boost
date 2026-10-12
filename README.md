@@ -176,4 +176,4 @@ written into [`Pro.swift`](Sources/BoostKit/Pro.swift).
 
 GPL-3.0. See [LICENSE](LICENSE).
 
-Built by [Karim Masmoudi](https://github.com/Kernel-Hunter).
+Built by [Karim Masmoudi](https://github.com/Kernel-Hunter). My other projects are at [karimmasmoudi.vercel.app](https://karimmasmoudi.vercel.app/projects/).
