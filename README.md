@@ -35,7 +35,7 @@ helps other people find it.
 
 ![Boost's memory tab: a pressure gauge, a history chart, and running apps grouped with their helper processes](docs/images/memory.png)
 
-[Watch the 30-second overview (with sound)](docs/boost-ad.mp4)
+https://github.com/user-attachments/assets/80e43cb2-c93a-4dbd-94ce-54885221b0df
 
 ## What you get
 
