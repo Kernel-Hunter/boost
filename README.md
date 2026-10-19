@@ -31,7 +31,9 @@ helps other people find it.
 > because notarizing needs a paid Apple Developer account. A downloaded `.zip`
 > will be stopped by Gatekeeper the first time. The cask clears the quarantine
 > flag for you, and building from source never sets one, so use one of those
-> two. If you downloaded the zip anyway, right-click the app and choose Open.
+> two. If you downloaded the zip anyway: on macOS 14, right-click the app and
+> choose Open. On macOS 15 and later, open it once, then go to System Settings,
+> Privacy & Security, and click Open Anyway next to the message about Boost.
 
 ![Boost's memory tab: a pressure gauge, a history chart, and running apps grouped with their helper processes](docs/images/memory.png)
 
