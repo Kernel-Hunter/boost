@@ -284,7 +284,11 @@ public enum AppScan {
         guard !parts.contains("..") else { return false }
         return appRoots.contains { root in
             let r = root.standardizedFileURL.resolvingSymlinksInPath().pathComponents
-            return parts.count > r.count && Array(parts.prefix(r.count)) == r
+            guard parts.count > r.count, Array(parts.prefix(r.count)) == r else { return false }
+            // Folders such as /Applications/Utilities are fine. A helper app
+            // nested inside another app's bundle is not: trashing it breaks the
+            // app that owns it.
+            return !parts[r.count..<(parts.count - 1)].contains { ($0 as NSString).pathExtension == "app" }
         }
     }
 

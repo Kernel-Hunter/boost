@@ -506,3 +506,26 @@ struct ProjectRootTests {
         #expect(!names.contains("plain"))
     }
 }
+
+@Suite("Projects: review fixes")
+struct ProjectReviewFixTests {
+
+    @Test("A folder that contains home is refused as a root")
+    func ancestorOfHomeRefused() throws {
+        let top = try makeRoot(); defer { try? fm.removeItem(at: top) }
+        let home = top.appending(path: "home")
+        try fm.createDirectory(at: home.appending(path: "Library"), withIntermediateDirectories: true)
+        #expect(!ProjectScan.isAcceptableRoot(top, home: home))
+        #expect(ProjectScan.isAcceptableRoot(home.appending(path: "Developer"), home: home))
+    }
+
+    @Test("A node_modules inside a built app bundle is never offered", arguments: ["Foo.app", "Foo.framework"])
+    func bundlesAreSkipped(bundle: String) throws {
+        let root = try makeRoot(); defer { try? fm.removeItem(at: root) }
+        let inside = root.appending(path: "\(bundle)/Contents/Resources")
+        try makeProject(in: inside, name: "app", folder: "node_modules", sibling: "package.json")
+
+        let r = ProjectScan.scan(roots: [root], olderThanDays: 30)
+        #expect(r.items.isEmpty)
+    }
+}

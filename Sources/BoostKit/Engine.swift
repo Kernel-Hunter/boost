@@ -326,8 +326,12 @@ public final class Engine: ObservableObject {
     /// Parent first, so it cannot spawn a child that escapes the freeze.
     func pause(_ item: Item) {
         guard !item.isProtected else { return }
-        for pid in item.pids { kill(pid, SIGSTOP) }
-        ownPaused.formUnion(item.pids)
+        // Boost can be a descendant of the app being paused, for example when
+        // it was started from that app's terminal. Stopping itself would leave
+        // nothing running to wake anything.
+        let targets = item.pids.filter { $0 != getpid() }
+        for pid in targets { kill(pid, SIGSTOP) }
+        ownPaused.formUnion(targets)
         Lease.write(ownPaused)
         Lease.armWatchdog()
     }
@@ -550,7 +554,12 @@ public final class Engine: ObservableObject {
         // Leaving things paused was the user's choice, so the crash watchdog
         // must not undo it: an empty lease tells it there is nothing to wake.
         guard resumeOnQuit else { Lease.write([]); return }
+        // Only what Boost froze. A job you stopped with Ctrl-Z, or one another
+        // tool stopped, is not ours to wake. The stopped check guards against
+        // a pid that has since been reused.
         let procs = SystemScan.sampleProcesses()
-        for (pid, s) in procs where s.stopped { kill(pid, SIGCONT) }
+        for (pid, s) in procs where s.stopped && ownPaused.contains(pid) { kill(pid, SIGCONT) }
+        ownPaused.removeAll()
+        Lease.write([])
     }
 }

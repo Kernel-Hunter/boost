@@ -572,3 +572,26 @@ struct AppScanListTests {
         #expect(AppScan.visible(apps, query: "zzz", sort: .name, ascending: true).isEmpty)
     }
 }
+
+@Suite("Uninstall: nested apps")
+struct AppScanNestedTests {
+
+    @Test("A helper app inside another app's bundle is not trashable")
+    func nestedHelperRefused() throws {
+        let s = try Scratch(); defer { s.cleanup() }
+        let outer = try s.makeApp("Foo", id: "com.x.foo")
+        let helperDir = outer.url.appending(path: "Contents/Library/LoginItems")
+        let helper = try s.makeApp("Helper", id: "com.x.foo.helper", in: helperDir)
+        #expect(AppScan.isTrashableApp(outer.url, appRoots: [s.applications]))
+        #expect(!AppScan.isTrashableApp(helper.url, appRoots: [s.applications]))
+    }
+
+    @Test("An app in a plain subfolder such as Utilities is still trashable")
+    func subfolderAllowed() throws {
+        let s = try Scratch(); defer { s.cleanup() }
+        let dir = s.applications.appending(path: "Utilities")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let app = try s.makeApp("Tool", id: "com.x.tool", in: dir)
+        #expect(AppScan.isTrashableApp(app.url, appRoots: [s.applications]))
+    }
+}

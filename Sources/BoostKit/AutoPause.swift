@@ -14,8 +14,10 @@ public final class AutoPause: ObservableObject {
 
     public static let idleChoices = [5, 10, 15, 30, 60]
 
-    /// An app doing real work, such as compiling, downloading or exporting, is
-    /// not idle even when it is in the background.
+    /// An app doing real work, such as compiling or exporting, is not idle even
+    /// when it is in the background. Playing audio or video, a call and many
+    /// downloads show up as a power assertion rather than as CPU, so those
+    /// are checked separately.
     static let busyCPU = 3.0
 
     @Published public var enabled: Bool = UserDefaults.standard.bool(forKey: "autoPauseEnabled") {
@@ -79,13 +81,15 @@ public final class AutoPause: ObservableObject {
     /// The apps that should be paused right now. Pure, so the rules that decide
     /// whether to freeze somebody's app can be tested without any app running.
     static func candidates(items: [Item], listed: Set<String>, lastActive: [String: Date],
-                           frontmost: String?, now: Date, idle: TimeInterval) -> [Item] {
+                           frontmost: String?, now: Date, idle: TimeInterval,
+                           awake: Set<pid_t> = []) -> [Item] {
         items.filter { item in
             guard listed.contains(item.baseID),
                   !item.isProtected,
                   !item.isPaused,
                   item.baseID != frontmost,
                   item.cpu < busyCPU,
+                  awake.isDisjoint(with: item.pids),
                   let seen = lastActive[item.baseID] else { return false }
             return now.timeIntervalSince(seen) >= idle
         }
@@ -114,7 +118,8 @@ public final class AutoPause: ObservableObject {
         guard engine.busy == nil else { return }
         let due = Self.candidates(items: items, listed: Set(listed.keys), lastActive: lastActive,
                                   frontmost: frontmost, now: now,
-                                  idle: TimeInterval(idleMinutes * 60))
+                                  idle: TimeInterval(idleMinutes * 60),
+                                  awake: PowerAssertions.busyPIDs())
         for item in due {
             engine.pause(item)
             sleeping.insert(item.baseID)
@@ -123,16 +128,25 @@ public final class AutoPause: ObservableObject {
 
     private func activated(_ id: String) {
         lastActive[id] = Date()
-        guard sleeping.contains(id) else { return }
-        sleeping.remove(id)
+        // A listed app can be frozen without being in `sleeping`, for example
+        // after Boost was relaunched with "leave paused on quit". Waking it is
+        // right either way: nobody wants to switch to a frozen window.
+        let wasSleeping = sleeping.remove(id) != nil
+        guard wasSleeping || listed[id] != nil else { return }
+        // A fresh scan, not engine.items: that snapshot can predate the pause,
+        // and an app it still shows as running would be left frozen.
         let engine = Engine.shared
-        for item in engine.items where item.baseID == id && item.isPaused { engine.resume(item) }
-        engine.refresh()
+        var woke = false
+        for item in SystemScan.buildItems() where item.baseID == id && item.isPaused {
+            engine.resume(item)
+            woke = true
+        }
+        if woke || wasSleeping { engine.refresh() }
     }
 
     private func wakeSleeping() {
         let engine = Engine.shared
-        for item in engine.items where sleeping.contains(item.baseID) && item.isPaused {
+        for item in SystemScan.buildItems() where sleeping.contains(item.baseID) && item.isPaused {
             engine.resume(item)
         }
         sleeping.removeAll()

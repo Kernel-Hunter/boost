@@ -301,3 +301,47 @@ struct HistoryLoginHintTests {
         #expect(!HistoryCard.showsLoginHint(span: 60, loginEnabled: true))
     }
 }
+
+// MARK: - Apps that are awake on purpose
+
+@MainActor
+@Suite("Auto-pause: power assertions")
+struct PowerAssertionTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func item(_ id: String, pids: [pid_t]) -> Item {
+        Item(baseID: id, id: id, name: id, category: .app, isAppleSoftware: false,
+             pids: pids, rssBytes: 500 * 1_048_576, rssKnown: true, cpu: 0.1,
+             isPaused: false, bundlePath: nil, runningAppPID: nil)
+    }
+
+    @Test("An app holding a power assertion is not paused, however idle")
+    func awakeAppIsSkipped() {
+        let seen = ["music": now.addingTimeInterval(-9999), "mail": now.addingTimeInterval(-9999)]
+        let items = [item("music", pids: [10, 11]), item("mail", pids: [20])]
+        let due = AutoPause.candidates(items: items, listed: ["music", "mail"], lastActive: seen,
+                                       frontmost: nil, now: now, idle: 600, awake: [11])
+        #expect(due.map(\.baseID) == ["mail"])
+    }
+
+    @Test("Reads blocking assertions and the pid they are held for")
+    func parsesTable() {
+        let table: NSDictionary = [
+            NSNumber(value: 100): [["AssertType": "PreventUserIdleSystemSleep",
+                                    "AssertionOnBehalfOfPID": NSNumber(value: 200)]],
+            NSNumber(value: 300): [["AssertType": "PreventUserIdleDisplaySleep"]],
+            NSNumber(value: 400): [["AssertType": "BackgroundTask"]],
+        ]
+        #expect(PowerAssertions.parse(table) == [100, 200, 300])
+    }
+
+    @Test("Ignores a malformed table instead of crashing")
+    func malformed() {
+        #expect(PowerAssertions.parse(["x": 1, NSNumber(value: 5): "no"]).isEmpty)
+    }
+
+    @Test("The live call returns without trouble")
+    func liveCall() {
+        _ = PowerAssertions.busyPIDs()
+    }
+}
