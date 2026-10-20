@@ -280,3 +280,24 @@ struct SustainedAlertTests {
         #expect(!r.evaluateSustained(tight: true, culprit: culprit, now: t0.addingTimeInterval(500), notify: { _ in }))
     }
 }
+
+// MARK: - Start-at-login hint
+
+@Suite("History login hint")
+struct HistoryLoginHintTests {
+    @Test("Shown while the span is short and login is off")
+    func shortSpan() {
+        #expect(HistoryCard.showsLoginHint(span: 20 * 60, loginEnabled: false))
+        #expect(HistoryCard.showsLoginHint(span: 0, loginEnabled: false))
+    }
+
+    @Test("Hidden once Boost has been watching for hours")
+    func longSpan() {
+        #expect(!HistoryCard.showsLoginHint(span: 7 * 3600, loginEnabled: false))
+    }
+
+    @Test("Hidden whenever login is already on")
+    func loginOn() {
+        #expect(!HistoryCard.showsLoginHint(span: 60, loginEnabled: true))
+    }
+}

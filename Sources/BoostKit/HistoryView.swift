@@ -19,6 +19,14 @@ final class HistoryRangeSelection: ObservableObject {
 struct HistoryCard: View {
     let history: LongHistory
     @StateObject private var selection = HistoryRangeSelection()
+    @StateObject private var login = LoginItemModel()
+
+    /// How much of the week Boost has actually seen. A Mac that quits Boost
+    /// every evening never fills the chart, so a short span is the moment to
+    /// say why and offer the fix.
+    static func showsLoginHint(span: TimeInterval, loginEnabled: Bool) -> Bool {
+        !loginEnabled && span < 6 * 3600
+    }
 
     var body: some View {
         let now = Date()
@@ -56,6 +64,19 @@ struct HistoryCard: View {
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
             }
+
+            if Self.showsLoginHint(span: recordedSpan(now: now), loginEnabled: login.enabled) {
+                HStack(spacing: 8) {
+                    Text("Boost only records while it is open.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Button("Start at login") { login.set(true) }
+                        .controlSize(.small)
+                    if let problem = login.problem {
+                        Text(problem).font(.system(size: 10)).foregroundStyle(.orange)
+                    }
+                }
+            }
         }
         .padding(.horizontal, 18).padding(.vertical, 11)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -64,6 +85,11 @@ struct HistoryCard: View {
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         }
         .padding(.horizontal, 18).padding(.bottom, 8)
+    }
+
+    private func recordedSpan(now: Date) -> TimeInterval {
+        guard let first = history.points(for: .week, now: now).first else { return 0 }
+        return now.timeIntervalSince(first.date)
     }
 
     private func summary(range: HistoryRange, now: Date) -> String {
