@@ -20,6 +20,17 @@ public enum Snapshot {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.accessory)
+        // The render borrows a few settings. They are put back before exit so
+        // running it on your own Mac does not change your preferences.
+        let borrowed = ["firstRunDismissed", "projectCutoffDays", "historyRange", "selectedTab"]
+        let original = borrowed.map { ($0, UserDefaults.standard.object(forKey: $0)) }
+        func restoreSettings() {
+            for (key, value) in original {
+                if let value { UserDefaults.standard.set(value, forKey: key) }
+                else { UserDefaults.standard.removeObject(forKey: key) }
+            }
+            UserDefaults.standard.synchronize()
+        }
         // Screenshots show the app as it looks once the welcome card is gone.
         UserDefaults.standard.set(true, forKey: "firstRunDismissed")
         UserDefaults.standard.set(30, forKey: "projectCutoffDays")
@@ -47,6 +58,7 @@ public enum Snapshot {
                       settle: tab == .memory ? 3.0 : 12.0, to: directory)
             }
         }
+        restoreSettings()
         exit(0)
     }
 

@@ -34,7 +34,7 @@ enum MemoryReport {
 
         if !apps.isEmpty {
             lines.append("")
-            lines.append("Biggest apps")
+            lines.append("Biggest apps (system and command line processes left out)")
             for app in apps { lines.append("  \(app.name) \(fmtBytes(app.bytes))") }
         }
 

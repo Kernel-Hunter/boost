@@ -149,7 +149,9 @@ struct LargeFileView: View {
 
     @ViewBuilder private var notices: some View {
         if engine.capped {
-            notice("Stopped early because these folders hold a very large number of items. "
+            let named = engine.cappedFolders.isEmpty ? "these folders"
+                : engine.cappedFolders.joined(separator: ", ")
+            notice("Stopped early in \(named) because they hold a very large number of items. "
                    + "The list may be incomplete.")
         }
         if engine.matches > engine.items.count {

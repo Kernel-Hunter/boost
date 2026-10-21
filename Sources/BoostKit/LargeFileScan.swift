@@ -50,6 +50,9 @@ public struct LargeFileScanResult: Sendable {
     /// True when the walk hit its entry cap before finishing. The list is then
     /// incomplete and the UI must say so.
     public var capped = false
+    /// The folders whose share of the walk ran out, so the notice can name
+    /// exactly what was not fully read.
+    public var cappedFolders: [String] = []
     public var visited = 0
     /// Over the size threshold but changed in the last minute, so probably
     /// still being written.
@@ -117,6 +120,16 @@ public enum LargeFileScan {
         bundleExtensions.contains((name as NSString).pathExtension.lowercased())
     }
 
+    /// Where Music and TV keep their media when the library is a plain folder
+    /// rather than a package. Removing a track from here leaves the app
+    /// showing it as missing, so these are never listed.
+    static let appLibraryFolders: Set<String> = ["Media.localized", "iTunes Media"]
+
+    /// A folder the scan treats as one opaque item.
+    static func isOpaqueFolder(_ name: String) -> Bool {
+        isBundleName(name) || appLibraryFolders.contains(name)
+    }
+
     private static var fm: FileManager { .default }
 
     // MARK: - Roots
@@ -151,9 +164,14 @@ public enum LargeFileScan {
     /// external disk is not scanned.
     public static func isAcceptableRoot(_ url: URL, home: URL? = nil) -> Bool {
         guard ProjectScan.isAcceptableRoot(url, home: home) else { return false }
-        let parts = ProjectScan.canonical(url).pathComponents
+        let canonical = ProjectScan.canonical(url)
+        let parts = canonical.pathComponents
         if parts.count > 1, parts[1] == "Volumes" { return false }
-        return true
+        // A personal folder that is really a link somewhere else, such as
+        // another user's folder or /private/tmp, is not scanned. It has to
+        // resolve to somewhere inside your home folder.
+        let h = ProjectScan.canonical(home ?? fm.homeDirectoryForCurrentUser)
+        return ProjectScan.isInside(canonical, of: h)
     }
 
     private static func isAcceptableHome(_ url: URL) -> Bool {
@@ -200,8 +218,14 @@ public enum LargeFileScan {
             roots.deep.map { (ProjectScan.canonical($0), false) }
             + roots.shallow.map { (ProjectScan.canonical($0), true) }
 
-        walk: for (root, shallow) in walks {
+        for (index, walkRoot) in walks.enumerated() {
+            let (root, shallow) = walkRoot
             if isCancelled() { result.cancelled = true; return result }
+            // Each folder gets an equal share of what is left, and a folder
+            // that uses less hands the rest on. One huge Documents tree cannot
+            // starve Movies, Music and Pictures.
+            let budget = max(1, (maxEntries - visited) / (walks.count - index))
+            var rootVisited = 0
             guard let e = fm.enumerator(
                 at: root, includingPropertiesForKeys: keys,
                 options: [.skipsHiddenFiles, .skipsPackageDescendants]
@@ -209,8 +233,13 @@ public enum LargeFileScan {
 
             for case let url as URL in e {
                 visited += 1
+                rootVisited += 1
                 if visited % 256 == 0, isCancelled() { result.cancelled = true; return result }
-                if visited > maxEntries { result.capped = true; break walk }
+                if rootVisited > budget {
+                    result.capped = true
+                    result.cappedFolders.append(root.lastPathComponent)
+                    break
+                }
 
                 guard let v = try? url.resourceValues(forKeys: keySet) else { continue }
                 if v.isSymbolicLink == true { e.skipDescendants(); continue }
@@ -223,7 +252,7 @@ public enum LargeFileScan {
                 if v.isDirectory == true {
                     // A bundle is one opaque item, and a shallow root never
                     // goes below its top level.
-                    if shallow || v.isPackage == true || isBundleName(name) { e.skipDescendants() }
+                    if shallow || v.isPackage == true || isOpaqueFolder(name) { e.skipDescendants() }
                     continue
                 }
                 guard v.isRegularFile == true else { continue }
@@ -342,7 +371,7 @@ public enum LargeFileScan {
         }
         let below = Array(resolved.pathComponents.dropFirst(root.pathComponents.count))
         if below.contains(where: { $0.hasPrefix(".") }) { return .refused("hidden") }
-        if below.dropLast().contains(where: isBundleName) { return .refused("inside a bundle") }
+        if below.dropLast().contains(where: isOpaqueFolder) { return .refused("inside a bundle or media library") }
 
         guard let modified = v.contentModificationDate else { return .refused("no date") }
         if now.timeIntervalSince(modified) < recentWindow { return .tooRecent }
