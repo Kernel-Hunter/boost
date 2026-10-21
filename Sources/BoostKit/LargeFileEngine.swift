@@ -27,6 +27,7 @@ public final class LargeFileEngine: ObservableObject {
     @Published public var selection: Set<String> = []
     @Published public private(set) var lastScan: Date?
     @Published public private(set) var capped = false
+    @Published public private(set) var cappedFolders: [String] = []
     @Published public private(set) var matches = 0
     @Published public private(set) var skippedRecent = 0
     @Published public var report: String?
@@ -85,6 +86,7 @@ public final class LargeFileEngine: ObservableObject {
 
             self.items = result.items
             self.capped = result.capped
+            self.cappedFolders = result.cappedFolders
             self.matches = result.matches
             self.skippedRecent = result.skippedRecent
             // Nothing is ticked for you. These are your own files; opting in
@@ -140,6 +142,10 @@ public final class LargeFileEngine: ObservableObject {
             self.selection.subtract(gone)
             self.matches = max(self.items.count, self.matches - r.moved)
             self.trashing = false
+            // The list held only the largest files. When it is now empty but
+            // more matched, the next ones are still there: look again instead
+            // of saying there is nothing.
+            if self.items.isEmpty && self.matches > 0 { self.scan() }
         }
     }
 

@@ -39,7 +39,7 @@ struct MemoryReportTests {
                     MemoryReport.App(name: "Claude", bytes: 4 * gb)]
         let text = MemoryReport.text(version: "1.3.0", machine: machine, mem: mem(), apps: apps,
                                      pausedCount: 2, history: nil, now: now)
-        #expect(text.contains("Biggest apps\n  Safari 700 MB\n  Claude 4.00 GB"))
+        #expect(text.contains("Biggest apps (system and command line processes left out)\n  Safari 700 MB\n  Claude 4.00 GB"))
         #expect(text.contains("Paused apps: 2"))
         #expect(!text.contains("/Users"))
         #expect(!text.contains(NSUserName()))

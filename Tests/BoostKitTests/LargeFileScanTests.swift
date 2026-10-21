@@ -545,3 +545,51 @@ struct LargeFileRootTests {
         #expect(!LargeFileScan.isAcceptableRoot(home, home: home))
     }
 }
+
+@Suite("Large files: review fixes")
+struct LargeFileReviewFixTests {
+
+    @Test("Music and TV library folders are never listed", arguments: ["Media.localized", "iTunes Media"])
+    func appLibrariesSkipped(folder: String) throws {
+        let root = try makeRoot(); defer { try? fm.removeItem(at: root) }
+        try makeFile(root.appending(path: "Music/\(folder)/Album/track.m4a"))
+        let loose = try makeFile(root.appending(path: "Music/loose-recording.wav"))
+
+        #expect(paths(scan(root)) == [loose.path])
+    }
+
+    @Test("A file inside a media library is refused at trash time too", arguments: ["Media.localized", "iTunes Media"])
+    func appLibraryRefusedAtVerify(folder: String) throws {
+        let root = try makeRoot(); defer { try? fm.removeItem(at: root) }
+        let track = try makeFile(root.appending(path: "Music/\(folder)/track.m4a"))
+        let item = LargeFileItem(url: track, bytes: 300 * 1024, lastAccessed: nil,
+                                 lastModified: try fm.attributesOfItem(atPath: track.path)[.modificationDate] as? Date)
+        let verdict = LargeFileScan.verify(item, roots: LargeFileRoots(deep: [root]))
+        #expect(verdict != .ok)
+    }
+
+    @Test("One huge folder cannot use up the whole budget")
+    func budgetIsShared() throws {
+        let first = try makeRoot(); defer { try? fm.removeItem(at: first) }
+        let second = try makeRoot(); defer { try? fm.removeItem(at: second) }
+        for i in 0..<60 { try makeFile(first.appending(path: "f\(i).bin"), kbSize: 1) }
+        let late = try makeFile(second.appending(path: "late.mov"))
+
+        let r = LargeFileScan.scan(roots: LargeFileRoots(deep: [first, second]), minBytes: threshold,
+                                   maxEntries: 40)
+        #expect(paths(r) == [late.path])
+        #expect(r.capped)
+        #expect(r.cappedFolders == [first.lastPathComponent])
+    }
+
+    @Test("A personal folder that links outside home is not accepted")
+    func linkOutsideHomeRefused() throws {
+        let home = try makeRoot(); defer { try? fm.removeItem(at: home) }
+        let elsewhere = try makeRoot(); defer { try? fm.removeItem(at: elsewhere) }
+        try fm.createDirectory(at: home.appending(path: "Documents"), withIntermediateDirectories: true)
+        try fm.createSymbolicLink(at: home.appending(path: "Downloads"), withDestinationURL: elsewhere)
+
+        #expect(LargeFileScan.isAcceptableRoot(home.appending(path: "Documents"), home: home))
+        #expect(!LargeFileScan.isAcceptableRoot(home.appending(path: "Downloads"), home: home))
+    }
+}
