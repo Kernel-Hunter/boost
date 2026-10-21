@@ -129,6 +129,7 @@ public final class UninstallEngine: ObservableObject {
         let lib = library
         let others = allBundleIDs
         let needsSize = app.bytes == nil
+        let sharedNames = Set(apps.filter { $0.id != app.id }.flatMap(\.matchNames))
         // A `let` copy: capturing the mutable local would not be Sendable.
         let snapshot = app
         Task {
@@ -143,7 +144,10 @@ public final class UninstallEngine: ObservableObject {
             }
             leftovers = scan.found.sorted { $0.bytes > $1.bytes }
             ignoredCount = scan.ignored.count
-            ticked.formUnion(scan.found.map(\.id))
+            // A folder named after another installed app's name, such as a
+            // generic "Electron", may be shared. It is shown, but left for the
+            // person to tick.
+            ticked.formUnion(scan.found.filter { !sharedNames.contains($0.name) }.map(\.id))
             scanningLeftovers = false
         }
     }

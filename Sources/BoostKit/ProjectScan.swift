@@ -260,8 +260,19 @@ public enum ProjectScan {
     /// and a package's `package.json` can sit untouched for a year while the
     /// repo is committed to daily; judging by the manifest alone would list a
     /// live project as abandoned.
-    static func lastActivity(ageFiles: [URL], project: URL, root: URL) -> Date? {
+    static func lastActivity(ageFiles: [URL], project: URL, root: URL, excluding target: URL? = nil) -> Date? {
         var newest = ageFiles.compactMap(modified).max()
+        // Source you are still editing counts too: a project with no git
+        // history and a stale manifest is not abandoned if its files change.
+        let skip = target?.standardizedFileURL.path
+        if let children = try? fm.contentsOfDirectory(
+            at: project, includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) {
+            for child in children.prefix(2000) where child.standardizedFileURL.path != skip {
+                if let d = modified(child) { newest = max(newest ?? d, d) }
+            }
+        }
         var dir = project.standardizedFileURL
         let top = root.standardizedFileURL
         while dir.path == top.path || isInside(dir, of: top) {
@@ -391,7 +402,8 @@ public enum ProjectScan {
         for f in found {
             if isCancelled() { result.cancelled = true; return result }
             let project = f.folder.deletingLastPathComponent()
-            guard let active = lastActivity(ageFiles: f.ageFiles, project: project, root: f.root) else { continue }
+            guard let active = lastActivity(ageFiles: f.ageFiles, project: project, root: f.root,
+                                              excluding: f.folder) else { continue }
             let days = idleDays(since: active, now: now)
             guard days >= olderThanDays else { continue }
             if recentlyModified(f.folder, now: now) { result.skippedRecent += 1; continue }

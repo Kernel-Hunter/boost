@@ -529,3 +529,19 @@ struct ProjectReviewFixTests {
         #expect(r.items.isEmpty)
     }
 }
+
+@Suite("Projects: source edits count as activity")
+struct ProjectSourceActivityTests {
+
+    @Test("A recently edited source file keeps an old-manifest project off the list")
+    func freshSourceKeepsItListed() throws {
+        let root = try makeRoot(); defer { try? fm.removeItem(at: root) }
+        let target = try makeProject(in: root, folder: "node_modules", sibling: "package.json", idle: 120)
+        let project = target.deletingLastPathComponent()
+        try "x".write(to: project.appending(path: "index.js"), atomically: true, encoding: .utf8)
+        try setDate(project.appending(path: "index.js"), daysAgo(3))
+
+        let r = ProjectScan.scan(roots: [root], olderThanDays: 30)
+        #expect(r.items.isEmpty)
+    }
+}
