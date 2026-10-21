@@ -24,7 +24,7 @@ struct HistoryCard: View {
     /// How much of the week Boost has actually seen. A Mac that quits Boost
     /// every evening never fills the chart, so a short span is the moment to
     /// say why and offer the fix.
-    static func showsLoginHint(span: TimeInterval, loginEnabled: Bool) -> Bool {
+    nonisolated static func showsLoginHint(span: TimeInterval, loginEnabled: Bool) -> Bool {
         !loginEnabled && span < 6 * 3600
     }
 
