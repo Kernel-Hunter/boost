@@ -86,6 +86,11 @@ listed. Everything goes to the Trash, and there is an Undo.
 
 ![Boost's uninstall tab: a searchable list of installed apps with sizes and when each was last used](docs/images/uninstall.png)
 
+**Copy Report.** A button in the popover copies a plain text summary for a bug
+report or a forum thread: your Mac, memory pressure, swap, the biggest apps and
+the last day's peak. It lists app names and sizes only, with no file paths or
+user name, and nothing is sent anywhere.
+
 **The small things.** Start at login. A Dock badge. An optional global shortcut
 (⌥⌘B). Sort by name, memory or CPU. Reveal in Finder. Light and dark mode.
 
