@@ -40,7 +40,7 @@ enum IconCache {
 // MARK: - Root
 
 public enum Tab: String, CaseIterable, Identifiable {
-    case memory, disk, projects, uninstall
+    case memory, disk, projects, largeFiles, uninstall
     public var id: String { rawValue }
 
     var title: String {
@@ -48,6 +48,7 @@ public enum Tab: String, CaseIterable, Identifiable {
         case .memory:    return "Memory"
         case .disk:      return "Disk"
         case .projects:  return "Projects"
+        case .largeFiles: return "Large Files"
         case .uninstall: return "Uninstall"
         }
     }
@@ -57,6 +58,7 @@ public enum Tab: String, CaseIterable, Identifiable {
         case .memory:    return "memorychip"
         case .disk:      return "internaldrive"
         case .projects:  return "hammer"
+        case .largeFiles: return "doc.text.magnifyingglass"
         case .uninstall: return "trash.square"
         }
     }
@@ -66,6 +68,7 @@ public enum Tab: String, CaseIterable, Identifiable {
         case .memory:    return "Running apps and memory"
         case .disk:      return "Reclaimable disk space"
         case .projects:  return "Old build and dependency folders in your projects"
+        case .largeFiles: return "The biggest files in your own folders"
         case .uninstall: return "Remove an app and what it left behind"
         }
     }
@@ -105,6 +108,7 @@ public struct ContentView: View {
                 case .memory: memoryTab
                 case .disk:   DiskView(engine: disk)
                 case .projects: ProjectView(engine: ProjectEngine.shared)
+                case .largeFiles: LargeFileView(engine: LargeFileEngine.shared)
                 case .uninstall: UninstallView()
                 }
             }
