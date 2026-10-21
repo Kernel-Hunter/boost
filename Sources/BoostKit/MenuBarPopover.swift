@@ -11,6 +11,7 @@ import AppKit
 public struct MenuBarContent: View {
     @ObservedObject var engine: Engine
     @ObservedObject var disk: DiskEngine
+    @StateObject private var copied = Flag()
 
     public init(engine: Engine = .shared, disk: DiskEngine = .shared) {
         self.engine = engine
@@ -169,6 +170,8 @@ public struct MenuBarContent: View {
                 openMainWindow()
             }
             Spacer()
+            Button(copied.on ? "Copied" : "Copy Report") { copyReport() }
+                .help("Copies memory figures and app names as plain text, for a bug report. Nothing is sent anywhere.")
             Button("Settings") {
                 NSApp.activate(ignoringOtherApps: true)
                 NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
@@ -195,6 +198,22 @@ public struct MenuBarContent: View {
         case .easy:     return .green
         case .moderate: return .orange
         case .tight:    return .red
+        }
+    }
+
+    private func copyReport() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+        let report = MemoryReport.text(
+            version: version, machine: MemoryReport.currentMachine(), mem: engine.mem,
+            apps: topItems.map { MemoryReport.App(name: $0.name, bytes: $0.rssBytes) },
+            pausedCount: engine.pausedItems.count, history: engine.longHistory)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(report, forType: .string)
+        copied.on = true
+        let flag = copied
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            flag.on = false
         }
     }
 
