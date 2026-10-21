@@ -74,6 +74,12 @@ virtualenvs, CocoaPods and similar folders in projects you have not touched for
 30 to 180 days. A folder is listed only when the manifest next to it proves what
 it is. Everything goes to the Trash.
 
+**Large Files.** Lists the biggest files in Downloads, Desktop, Documents,
+Movies, Music and Pictures, with how long since you last opened each one. It
+scans only when you press Scan, because macOS may ask permission for some of
+those folders. It lists single files only, never folders, app bundles or photo
+libraries. Nothing is ticked, and anything you remove goes to the Trash.
+
 **Uninstall.** Pick an app, or drop one onto the window, and Boost lists what it
 left in your Library with sizes before anything moves. Only exact matches are
 listed. Everything goes to the Trash, and there is an Undo.

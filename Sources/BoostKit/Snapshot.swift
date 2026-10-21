@@ -38,6 +38,10 @@ public enum Snapshot {
 
             for tab in Tab.allCases {
                 UserDefaults.standard.set(tab.rawValue, forKey: "selectedTab")
+                // The app scans this tab only when you press Scan, so the
+                // render does it for you. The list shows real files from this
+                // Mac, so check it before it goes anywhere public.
+                if tab == .largeFiles { LargeFileEngine.shared.scan() }
                 write(ContentView(), size: CGSize(width: 1040, height: 760),
                       name: "\(tab.rawValue)-\(label)", scheme: scheme,
                       settle: tab == .memory ? 3.0 : 12.0, to: directory)
