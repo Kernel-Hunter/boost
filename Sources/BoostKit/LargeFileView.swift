@@ -24,19 +24,11 @@ struct LargeFileView: View {
                 notices
             }
             content
-            if engine.hasScanned { footer }
+                .boostBottomBar {
+                    if engine.hasScanned { footer }
+                }
         }
-        .background {
-            ZStack {
-                Color(nsColor: .windowBackgroundColor)
-                RadialGradient(
-                    colors: [Color.brand.opacity(0.08), Color.clear],
-                    center: UnitPoint(x: 0.12, y: 0.1),
-                    startRadius: 0, endRadius: 420
-                )
-            }
-            .ignoresSafeArea()
-        }
+        .boostBackdrop()
         .overlay(alignment: .bottom) {
             if let report = engine.report {
                 Toast(text: report).padding(.bottom, 56)
@@ -60,52 +52,22 @@ struct LargeFileView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 22) {
-            ZStack {
-                Circle().fill(Color.brand.opacity(0.14))
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 26))
-                    .foregroundStyle(Color.brand.gradient)
-            }
-            .frame(width: 72, height: 72)
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(engine.scanning && engine.items.isEmpty ? "-" : fmtBytes(engine.totalBytes))
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .kerning(-0.6)
-                        .foregroundStyle(Color.brand)
-                        .contentTransition(.numericText())
-                    Text("in large files").font(.system(size: 14)).foregroundStyle(.secondary)
-                }
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 0)
-
+        ReclaimHeader(
+            symbol: "doc.text.magnifyingglass",
+            value: engine.scanning && engine.items.isEmpty ? "-" : fmtBytes(engine.totalBytes),
+            unit: "in large files", subtitle: subtitle, busy: engine.scanning || engine.trashing
+        ) {
             Button {
                 engine.scan()
             } label: {
                 Label("Rescan", systemImage: "arrow.clockwise")
                     .font(.caption)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .buttonStyle(QuietButtonStyle())
             // Same reasoning as the Projects tab: a rescan mid-move would race
             // the list the move is about to edit.
             .disabled(engine.scanning || engine.trashing)
         }
-        .padding(.horizontal, 22).padding(.vertical, 20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
-        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
     }
 
     private var subtitle: String {
@@ -137,14 +99,22 @@ struct LargeFileView: View {
 
             Spacer()
 
-            Picker("Sort by", selection: $engine.sort) {
-                ForEach(LargeFileSort.allCases) { Text($0.title).tag($0) }
+            Menu {
+                Picker("Sort by", selection: $engine.sort) {
+                    ForEach(LargeFileSort.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.inline).labelsHidden()
+            } label: {
+                Text(engine.sort.title).font(.caption)
             }
-            .pickerStyle(.menu).labelsHidden().controlSize(.small)
+            .menuStyle(.borderlessButton)
             .fixedSize()
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .boostGlassCapsule()
             .help("Sort the list by")
+            .accessibilityLabel("Sort by")
         }
-        .padding(.horizontal, 22).padding(.vertical, 6)
+        .padding(.horizontal, 24).padding(.vertical, 8)
     }
 
     @ViewBuilder private var notices: some View {
@@ -168,7 +138,7 @@ struct LargeFileView: View {
             Text(text).foregroundStyle(.secondary)
         }
         .font(.system(size: 11))
-        .padding(.horizontal, 22).padding(.vertical, 3)
+        .padding(.horizontal, 24).padding(.vertical, 3)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -186,13 +156,8 @@ struct LargeFileView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if engine.items.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "sparkles").font(.system(size: 26)).foregroundStyle(.tertiary)
-                Text("No large files found.").foregroundStyle(.secondary)
-                Text("Try a smaller size.")
-                    .font(.caption).foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            EmptyStateView(symbol: "doc.text.magnifyingglass", title: "No large files found.",
+                           detail: "Try a smaller size.")
         } else {
             List {
                 ForEach(engine.sortedItems) { item in
@@ -210,25 +175,12 @@ struct LargeFileView: View {
 
     /// What the tab shows until the user starts a scan.
     private var intro: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                Circle().fill(Color.brand.opacity(0.14))
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 30))
-                    .foregroundStyle(Color.brand.gradient)
-            }
-            .frame(width: 84, height: 84)
-
-            Text("Find your largest files")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-
-            Text("Boost looks inside Downloads, Desktop, Documents, Movies, Music and Pictures. "
-                 + "macOS may ask permission for some of them. Nothing leaves your Mac.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
-
+        EmptyStateView(
+            symbol: "doc.text.magnifyingglass",
+            title: "Find your largest files",
+            detail: "Boost looks inside Downloads, Desktop, Documents, Movies, Music and Pictures. "
+                + "macOS may ask permission for some of them. Nothing leaves your Mac."
+        ) {
             Text("Nothing is moved until you pick files and confirm. Moved files go to the Trash.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
@@ -248,6 +200,7 @@ struct LargeFileView: View {
                 .frame(width: 240)
                 .accessibilityLabel("Minimum file size")
             }
+            .padding(.top, 6)
 
             Button {
                 engine.scan()
@@ -257,34 +210,33 @@ struct LargeFileView: View {
                     Text("Scan").fontWeight(.semibold)
                 }
                 .frame(minWidth: 120)
-                .padding(.vertical, 7)
+                .padding(.vertical, 5)
             }
-            .buttonStyle(.borderedProminent)
+            .boostProminentButton()
             .controlSize(.large)
-            .tint(Color.brand)
+            .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 22)
     }
 
     // MARK: - Footer
 
     private var footer: some View {
-        HStack(spacing: 14) {
+        FloatingBar {
             Button(!engine.items.isEmpty && engine.selection.count == engine.items.count
                    ? "Select none" : "Select all") {
                 engine.setAll(engine.selection.count != engine.items.count)
             }
-            .buttonStyle(.plain)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .boostButton()
             .disabled(engine.items.isEmpty)
 
-            Text(engine.selection.isEmpty
-                 ? "Goes to the Trash, so you can put it back."
-                 : "\(engine.selectedItems.count) selected · \(fmtBytes(engine.selectedBytes))")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+            InfoPill {
+                Text(engine.selection.isEmpty
+                     ? "Goes to the Trash, so you can put it back."
+                     : "\(engine.selectedItems.count) selected · \(fmtBytes(engine.selectedBytes))")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
 
             Spacer()
 
@@ -297,15 +249,11 @@ struct LargeFileView: View {
                 }
                 .frame(minWidth: 120)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
             // Teal, not red: this one can be undone.
-            .tint(Color.brand)
+            .boostProminentButton()
+            .controlSize(.large)
             .disabled(engine.selection.isEmpty || engine.trashing || engine.scanning)
         }
-        .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(.regularMaterial)
-        .overlay(alignment: .top) { Divider().opacity(0.5) }
     }
 }
 
@@ -366,14 +314,7 @@ private struct LargeFileRow: View {
             .accessibilityLabel("Show \(item.name) in Finder")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
-        }
+        .boostRow(hovered: hover.on)
         .padding(.horizontal, 22).padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
@@ -383,6 +324,5 @@ private struct LargeFileRow: View {
             Button(engine.selection.contains(item.id) ? "Untick" : "Tick") { engine.toggle(item) }
         }
         .help(item.url.path)
-        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
     }
 }

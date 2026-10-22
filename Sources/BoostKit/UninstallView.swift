@@ -46,17 +46,7 @@ struct UninstallView: View {
             DetailPane(engine: engine)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background {
-            ZStack {
-                Color(nsColor: .windowBackgroundColor)
-                RadialGradient(
-                    colors: [Color.brand.opacity(0.08), Color.clear],
-                    center: UnitPoint(x: 0.12, y: 0.1),
-                    startRadius: 0, endRadius: 420
-                )
-            }
-            .ignoresSafeArea()
-        }
+        .boostBackdrop()
         .overlay(alignment: .bottom) {
             if let notice = engine.notice { Toast(text: notice).padding(.bottom, 56) }
         }
@@ -91,58 +81,73 @@ private struct AppListPane: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Apps").font(.system(size: 17, weight: .semibold, design: .rounded))
+                Text("Apps").font(.boostTitle)
                 Text("\(engine.visibleApps.count)")
                     .font(.system(size: 12, weight: .medium)).monospacedDigit()
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
                 Spacer()
                 Button {
                     engine.load()
                 } label: {
                     Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .medium))
                 }
-                .buttonStyle(.plain).foregroundStyle(.secondary)
+                .buttonStyle(QuietButtonStyle())
                 .disabled(engine.loading)
                 .help("Look for apps again")
                 .accessibilityLabel("Reload app list")
             }
 
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(.tertiary)
-                TextField("Search apps", text: $engine.search)
-                    .textFieldStyle(.plain).font(.system(size: 12.5))
-                if !engine.search.isEmpty {
-                    Button {
-                        engine.search = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 11)).foregroundStyle(.tertiary)
+            BoostGlassContainer(spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(.tertiary)
+                        TextField("Search apps", text: $engine.search)
+                            .textFieldStyle(.plain).font(.system(size: 12.5))
+                        if !engine.search.isEmpty {
+                            Button {
+                                engine.search = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill").font(.system(size: 11)).foregroundStyle(.tertiary)
+                            }
+                            .buttonStyle(.plain).accessibilityLabel("Clear search")
+                        }
                     }
-                    .buttonStyle(.plain).accessibilityLabel("Clear search")
-                }
-            }
-            .padding(.horizontal, 9).padding(.vertical, 7)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .boostGlassCapsule()
 
-            HStack(spacing: 8) {
-                Picker("Sort by", selection: $engine.sort) {
-                    ForEach(AppSort.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.menu).labelsHidden().controlSize(.small)
-                .fixedSize()
-                .help("Sort the list by")
+                    HStack(spacing: 6) {
+                        HStack(spacing: 2) {
+                            Menu {
+                                Picker("Sort by", selection: $engine.sort) {
+                                    ForEach(AppSort.allCases) { Text($0.title).tag($0) }
+                                }
+                                .pickerStyle(.inline).labelsHidden()
+                            } label: {
+                                Text(engine.sort.title).font(.caption)
+                            }
+                            .menuStyle(.borderlessButton)
+                            .fixedSize()
+                            .help("Sort the list by")
+                            .accessibilityLabel("Sort by")
 
-                Button {
-                    engine.ascending.toggle()
-                } label: {
-                    Image(systemName: engine.ascending ? "arrow.up" : "arrow.down")
-                        .font(.system(size: 10, weight: .semibold))
-                        .frame(width: 22, height: 20)
-                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
+                            Button {
+                                engine.ascending.toggle()
+                            } label: {
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .rotationEffect(.degrees(engine.ascending ? 0 : 180))
+                            }
+                            .buttonStyle(QuietButtonStyle())
+                            .boostAnimation(.spring(response: 0.3, dampingFraction: 1.0), value: engine.ascending)
+                            .help(engine.ascending ? "Ascending. Click for descending." : "Descending. Click for ascending.")
+                            .accessibilityLabel(engine.ascending ? "Ascending" : "Descending")
+                        }
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .boostGlassCapsule()
+                        Spacer()
+                    }
                 }
-                .buttonStyle(.plain).foregroundStyle(.secondary)
-                .help(engine.ascending ? "Ascending. Click for descending." : "Descending. Click for ascending.")
-                .accessibilityLabel(engine.ascending ? "Ascending" : "Descending")
-                Spacer()
             }
         }
         .padding(.horizontal, 14).padding(.top, 16).padding(.bottom, 10)
@@ -156,16 +161,15 @@ private struct AppListPane: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if engine.visibleApps.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: engine.search.isEmpty ? "square.dashed" : "magnifyingglass")
-                    .font(.system(size: 24)).foregroundStyle(.tertiary)
-                Text(engine.search.isEmpty ? "No apps found." : "No match for “\(engine.search)”")
-                    .foregroundStyle(.secondary)
+            EmptyStateView(
+                symbol: engine.search.isEmpty ? "square.dashed" : "magnifyingglass",
+                title: engine.search.isEmpty ? "No apps found." : "No match for “\(engine.search)”"
+            ) {
                 if !engine.search.isEmpty {
-                    Button("Clear the search") { engine.search = "" }.controlSize(.small)
+                    Button("Clear the search") { engine.search = "" }
+                        .boostButton().controlSize(.small)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
                 ForEach(engine.visibleApps) { app in
@@ -208,19 +212,19 @@ private struct AppRow: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(
-            RoundedRectangle(cornerRadius: 9)
+            RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
                 .fill(isSelected ? Color.brand.opacity(0.16)
-                      : hover.on ? Color.primary.opacity(0.05) : Color.clear)
+                      : hover.on ? Color.primary.opacity(0.06) : Color.clear)
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 9)
+            RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
                 .strokeBorder(isSelected ? Color.brand.opacity(0.45) : Color.clear, lineWidth: 1)
         }
         .padding(.horizontal, 8).padding(.vertical, 1.5)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
         .onTapGesture { engine.select(app) }
-        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
+        .boostAnimation(.easeOut(duration: 0.14), value: hover.on)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
@@ -263,26 +267,15 @@ private struct DetailPane: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle().fill(Color.brand.opacity(0.14))
-                Image(systemName: "trash.square")
-                    .font(.system(size: 30))
-                    .foregroundStyle(Color.brand.gradient)
-            }
-            .frame(width: 84, height: 84)
-
-            Text("Pick an app").font(.system(size: 19, weight: .semibold, design: .rounded))
-            Text("You will see the app and everything it left in your Library, with sizes, before anything moves. Or drop a .app here.")
-                .font(.callout).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 340)
+        EmptyStateView(
+            symbol: "trash.square", title: "Pick an app",
+            detail: "You will see the app and everything it left in your Library, with sizes, before anything moves. Or drop a .app here."
+        ) {
             Text("Only exact matches are listed. Everything goes to the Trash, so it can be put back.")
                 .font(.caption).foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 340)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -301,8 +294,8 @@ private struct SelectedApp: View {
             } else {
                 items
             }
-            footer
         }
+        .boostBottomBar { footer }
     }
 
     // MARK: Header
@@ -315,7 +308,7 @@ private struct SelectedApp: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(app.name)
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .font(.boostValue)
                     .lineLimit(1)
                 Text(app.bundleID ?? "No bundle identifier")
                     .font(.system(size: 11, design: .monospaced))
@@ -334,11 +327,11 @@ private struct SelectedApp: View {
                         Text(engine.trashing ? "Moving…" : "Move to Trash").fontWeight(.semibold)
                     }
                     .frame(minWidth: 128)
-                    .padding(.vertical, 7)
+                    .padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .tint(Color.brand)
+                .tint(Color.brandStrong)
                 .disabled(!engine.canTrash)
 
                 Button {
@@ -346,17 +339,11 @@ private struct SelectedApp: View {
                 } label: {
                     Label("Show in Finder", systemImage: "magnifyingglass").font(.caption)
                 }
-                .buttonStyle(.plain).foregroundStyle(.secondary)
+                .buttonStyle(QuietButtonStyle())
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 18)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
-        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
+        .boostHeaderCard()
     }
 
     private var subtitle: String {
@@ -376,14 +363,14 @@ private struct SelectedApp: View {
                 Text(why.message(for: app.name))
                     .font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
                 if why == .running {
-                    Button("Check again") { engine.recheck() }.controlSize(.small)
+                    Button("Check again") { engine.recheck() }.boostButton().controlSize(.small)
                 }
             }
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
-        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Color.orange.opacity(0.3), lineWidth: 1) }
+        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Radius.medium, style: .continuous).strokeBorder(Color.orange.opacity(0.3), lineWidth: 1) }
         .padding(.horizontal, 22).padding(.vertical, 8)
     }
 
@@ -443,25 +430,26 @@ private struct SelectedApp: View {
     // MARK: Footer
 
     private var footer: some View {
-        HStack(spacing: 10) {
+        FloatingBar {
             if engine.refusal == nil {
                 let everything = engine.ticked.count == 1 + engine.leftovers.count
                 Button(everything ? "Untick all" : "Tick all") {
                     engine.ticked = everything ? [] : Set([app.id] + engine.leftovers.map(\.id))
                 }
-                .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
+                .boostButton()
                 .disabled(engine.scanningLeftovers)
 
-                Text("\(engine.chosenCount) ticked · \(fmtBytes(engine.chosenBytes))")
-                    .font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
+                InfoPill {
+                    Text("\(engine.chosenCount) ticked · \(fmtBytes(engine.chosenBytes))")
+                        .font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
+                }
             }
             Spacer()
-            Text("Moved to the Trash, never deleted. System-wide files in /Library are not handled.")
-                .font(.system(size: 10)).foregroundStyle(.tertiary).lineLimit(1)
+            InfoPill {
+                Text("Moved to the Trash, never deleted. System-wide files in /Library are not handled.")
+                    .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+            }
         }
-        .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(.regularMaterial)
-        .overlay(alignment: .top) { Divider().opacity(0.5) }
     }
 }
 
@@ -498,11 +486,7 @@ private struct TickRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(title).font(.system(size: 13, weight: .medium)).lineLimit(1).truncationMode(.middle)
-                    Text(kind)
-                        .font(.system(size: 9, weight: .semibold))
-                        .padding(.horizontal, 5).padding(.vertical, 1.5)
-                        .background(Color.primary.opacity(0.07), in: Capsule())
-                        .foregroundStyle(.secondary)
+                    Tag(kind, .secondary)
                 }
                 Text(subtitle).font(.system(size: 10)).foregroundStyle(.tertiary)
                     .lineLimit(1).truncationMode(.middle)
@@ -516,19 +500,11 @@ private struct TickRow: View {
                 .frame(width: 78, alignment: .trailing)
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
-        }
+        .boostRow(hovered: hover.on)
         .padding(.horizontal, 22).padding(.vertical, 3)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
         .onTapGesture { engine.toggle(id) }
-        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
     }
 }
 
@@ -546,7 +522,7 @@ private struct ResultCard: View {
                     .foregroundStyle(result.moved.isEmpty ? Color.orange : Color.brand)
                     .padding(.top, 40)
 
-                Text(headline).font(.system(size: 19, weight: .semibold, design: .rounded))
+                Text(headline).font(.boostTitle)
 
                 if !result.moved.isEmpty {
                     Text("\(fmtBytes(result.bytes)) comes back when you empty the Trash. Nothing was deleted.")
@@ -556,10 +532,12 @@ private struct ResultCard: View {
                 HStack(spacing: 10) {
                     if !result.moved.isEmpty {
                         Button("Undo") { engine.undo() }
-                            .buttonStyle(.borderedProminent).tint(Color.brand)
+                            .boostProminentButton()
                         Button("Show in Trash") { engine.revealInTrash() }
+                            .boostButton()
                     }
                     Button("Done") { engine.dismissResult() }
+                        .boostButton()
                 }
                 .controlSize(.large)
                 .padding(.top, 4)
@@ -578,7 +556,7 @@ private struct ResultCard: View {
                     }
                     .frame(maxWidth: 460, alignment: .leading)
                     .padding(14)
-                    .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
                     .padding(.top, 10)
                 }
             }

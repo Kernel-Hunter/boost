@@ -120,22 +120,11 @@ public struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 960, minHeight: 600)
-        .background {
-            // A flat system background is what made this read as "yet
-            // another SwiftUI utility" regardless of what sat on top of
-            // it. A dark radial wash with a hint of the brand color,
-            // centred behind the gauge, gives the whole window a source
-            // of light instead of a uniform gray field.
-            ZStack {
-                Color(nsColor: .windowBackgroundColor)
-                RadialGradient(
-                    colors: [Color.brand.opacity(0.10), Color.clear],
-                    center: UnitPoint(x: 0.28, y: 0.05),
-                    startRadius: 0, endRadius: 480
-                )
-            }
-            .ignoresSafeArea()
-        }
+        // A flat system background is what made this read as "yet another
+        // SwiftUI utility" regardless of what sat on top of it. A wash with a
+        // hint of the brand colour gives the window a source of light, which
+        // is also what lets the glass above it have something to refract.
+        .boostBackdrop(center: UnitPoint(x: 0.28, y: 0.05), strength: 0.10)
         .overlay(alignment: .bottom) {
             if let report = disk.report, tabs.tab == .disk {
                 Toast(text: report).padding(.bottom, 76)
@@ -153,7 +142,6 @@ public struct ContentView: View {
             if engine.needsAccessibility { AccessibilityBanner(engine: engine) }
             if !firstRun.dismissed { FirstRunCard(firstRun: firstRun) }
             processList
-            FooterBar(engine: engine)
         }
         .overlay(alignment: .bottom) {
             if let report = engine.lastReport { Toast(text: report).padding(.bottom, 76) }
@@ -195,35 +183,27 @@ public struct ContentView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.defaultMinListRowHeight, 1)
+        .boostBottomBar { FooterBar(engine: engine) }
     }
 
     /// An empty list here nearly always means a filter is on, not that nothing
     /// is running — so it says which, and offers the way out.
     @ViewBuilder private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: engine.search.isEmpty ? "checkmark.circle" : "magnifyingglass")
-                .font(.system(size: 26))
-                .foregroundStyle(.tertiary)
-
-            if !engine.search.isEmpty {
-                Text("No matches for “\(engine.search)”")
-                    .foregroundStyle(.secondary)
+        if !engine.search.isEmpty {
+            EmptyStateView(symbol: "magnifyingglass", title: "No matches for “\(engine.search)”") {
                 Button("Clear the filter") { engine.search = "" }
-                    .controlSize(.small)
-            } else if !engine.showSystem {
-                Text("Nothing of yours is running.")
-                    .foregroundStyle(.secondary)
-                Text("macOS's own processes are hidden. Turn on **Show system processes** to see them.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 320)
-            } else {
-                Text("Nothing running to show.")
-                    .foregroundStyle(.secondary)
+                    .boostButton().controlSize(.small)
             }
+            .padding(.vertical, 50)
+        } else if !engine.showSystem {
+            EmptyStateView(
+                symbol: "checkmark.circle", title: "Nothing of yours is running.",
+                detail: "macOS's own processes are hidden. Turn on Show system processes to see them.")
+                .padding(.vertical, 50)
+        } else {
+            EmptyStateView(symbol: "checkmark.circle", title: "Nothing running to show.")
+                .padding(.vertical, 50)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 70)
     }
 }
 
@@ -253,64 +233,109 @@ struct Sidebar: View {
             .padding(.top, 20)
             .padding(.bottom, 24)
 
-            ForEach(Tab.allCases) { t in
-                Button {
-                    tab = t
-                } label: {
-                    HStack(spacing: 9) {
-                        Image(systemName: t.symbol)
-                            .font(.system(size: 12, weight: .medium))
-                            .frame(width: 16)
-                        Text(t.title).font(.system(size: 12.5, weight: .medium))
-                        Spacer(minLength: 0)
+            BoostGlassContainer(spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Tab.allCases) { t in
+                        SidebarItem(tab: t, selected: tab == t) { tab = t }
                     }
-                    .foregroundStyle(tab == t ? Color.white : Color.secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background {
-                        if tab == t {
-                            RoundedRectangle(cornerRadius: 7)
-                                .fill(Color.brand.gradient)
-                        }
-                    }
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 10)
-                .help(t.help)
-                .accessibilityLabel(t.title)
-                .accessibilityAddTraits(tab == t ? [.isButton, .isSelected] : .isButton)
             }
 
             Spacer(minLength: 0)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Memory").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
-                    Spacer()
-                    Text("\(Int(engine.mem.pressure * 100))%")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                }
-                Capsule().fill(Color.primary.opacity(0.1)).frame(height: 4)
-                    .overlay(alignment: .leading) {
-                        GeometryReader { geo in
-                            Capsule().fill(Color.brand.gradient)
-                                .frame(width: geo.size.width * min(1, max(0, engine.mem.pressure)))
-                        }
-                    }
-                    .frame(height: 4)
-            }
-            .padding(11)
-            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 8))
-            .padding(.horizontal, 10)
-            .padding(.bottom, 12)
-            .animation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.pressure)
+            memoryCard
         }
         .frame(width: 176)
         .frame(maxHeight: .infinity)
         .background(.bar)
-        .animation(.spring(response: 0.3, dampingFraction: 1.0), value: tab)
+        .boostAnimation(.spring(response: 0.3, dampingFraction: 1.0), value: tab)
+    }
+
+    /// The pressure readout that stays put whichever tab is open.
+    private var memoryCard: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text("Memory").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int(engine.mem.pressure * 100))%")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            Capsule().fill(Color.primary.opacity(0.1)).frame(height: 5)
+                .overlay(alignment: .leading) {
+                    GeometryReader { geo in
+                        Capsule().fill(engine.mem.level.color.gradient)
+                            .frame(width: geo.size.width * min(1, max(0, engine.mem.pressure)))
+                    }
+                }
+                .frame(height: 5)
+        }
+        .padding(12)
+        .boostGlass(cornerRadius: Radius.medium)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 12)
+        .boostAnimation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.pressure)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Memory pressure")
+        .accessibilityValue("\(Int(engine.mem.pressure * 100)) percent")
+    }
+}
+
+private struct SidebarItem: View {
+    let tab: Tab
+    let selected: Bool
+    let action: () -> Void
+    @StateObject private var hover = RowHover()
+    @Environment(\.controlActiveState) private var activeState
+
+    /// Glass tints desaturate in a window that is not frontmost, and white text
+    /// on that grey is unreadable, so the label follows the window's state.
+    private var selectedText: Color {
+        if #available(macOS 26, *), activeState == .inactive { return .primary }
+        return .white
+    }
+
+    var body: some View {
+        Button(action: action) {
+            pill(label)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .onHover { hover.on = $0 }
+        .help(tab.help)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var label: some View {
+        HStack(spacing: 9) {
+            Image(systemName: tab.symbol)
+                .font(.system(size: 13, weight: .medium))
+                .frame(width: 18)
+            Text(tab.title).font(.system(size: 12.5, weight: .medium))
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(selected ? selectedText : hover.on ? Color.primary : Color.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .contentShape(Rectangle())
+    }
+
+    /// Selected: a brand-tinted glass pill on macOS 26 (the glass is the label's
+    /// own surface, so the text sits above it), the solid brand fill before
+    /// that. Hovered: a faint fill, so the rest feel clickable.
+    @ViewBuilder private func pill<Label: View>(_ label: Label) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
+        if selected {
+            if #available(macOS 26, *) {
+                label.boostGlass(cornerRadius: Radius.small, tint: Color.brandStrong, interactive: true)
+            } else {
+                label.background(shape.fill(Color.brandStrong.gradient))
+            }
+        } else {
+            label.background(shape.fill(Color.primary.opacity(hover.on ? 0.06 : 0)))
+        }
     }
 }
 
@@ -320,20 +345,7 @@ struct MemoryHeader: View {
     @ObservedObject var engine: Engine
     @StateObject private var info = Flag()
 
-    private var statusText: String {
-        switch engine.mem.level {
-        case .easy:     return "Plenty of headroom"
-        case .moderate: return "Getting busy"
-        case .tight:    return "Under pressure"
-        }
-    }
-    private var statusColor: Color {
-        switch engine.mem.level {
-        case .easy: return .green
-        case .moderate: return .orange
-        case .tight: return .red
-        }
-    }
+    private var statusColor: Color { engine.mem.level.color }
 
     var body: some View {
         HStack(alignment: .center, spacing: 26) {
@@ -350,25 +362,25 @@ struct MemoryHeader: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .animation(.spring(response: 0.5, dampingFraction: 1.0), value: engine.mem.pressure)
+            .boostAnimation(.spring(response: 0.5, dampingFraction: 1.0), value: engine.mem.pressure)
             .accessibilityElement()
             .accessibilityLabel("Memory pressure")
             .accessibilityValue("\(Int(engine.mem.pressure * 100)) percent")
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(fmtBytes(engine.mem.used))
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
+                        .font(.boostDisplay)
                         .monospacedDigit()
                         .kerning(-0.6)
                         .contentTransition(.numericText())
                     Text("of \(fmtBytes(engine.mem.total))")
                         .font(.system(size: 14)).foregroundStyle(.secondary)
                 }
-                .animation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.used)
+                .boostAnimation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.used)
 
                 HStack(spacing: 14) {
-                    Label(statusText, systemImage: "circle.fill")
+                    Label(engine.mem.level.statusText, systemImage: "circle.fill")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(statusColor)
                         .labelStyle(DotLabel())
@@ -380,6 +392,7 @@ struct MemoryHeader: View {
                         .font(.caption)
                         .foregroundStyle(engine.mem.swapUsed == 0 ? .secondary : statusColor)
                 }
+                .monospacedDigit()
 
                 if engine.history.count >= 2, let trend = engine.history.trend() {
                     Text(trend)
@@ -391,18 +404,21 @@ struct MemoryHeader: View {
             Spacer(minLength: 0)
 
             VStack(alignment: .trailing, spacing: 10) {
+                // A solid prominent button, not a glass one: it sits on a glass
+                // card, and glass does not go on glass.
                 Button {
                     engine.freeMemory()
                 } label: {
                     HStack(spacing: 7) {
                         Image(systemName: "memorychip.fill")
+                            .boostPulse(active: engine.busy != nil)
                         Text(engine.busy ?? "Free Memory").fontWeight(.semibold)
                     }
                     .frame(minWidth: 168)
-                    .padding(.vertical, 9)
+                    .padding(.vertical, 7)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color.brand)
+                .tint(Color.brandStrong)
                 .controlSize(.large)
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(engine.busy != nil)
@@ -423,9 +439,9 @@ struct MemoryHeader: View {
                     Button {
                         info.on.toggle()
                     } label: {
-                        Image(systemName: "questionmark.circle").foregroundStyle(.secondary)
+                        Image(systemName: "questionmark.circle")
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(QuietButtonStyle())
                     .help("How Free Memory works")
                     .popover(isPresented: $info.on, arrowEdge: .bottom) {
                         VStack(alignment: .leading, spacing: 6) {
@@ -441,32 +457,28 @@ struct MemoryHeader: View {
             }
         }
         .padding(.horizontal, 22).padding(.vertical, 16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
-        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
+        .boostHeaderCard()
     }
 }
 
-/// A ring instead of a bar for the header's headline figure — the one
-/// piece of this redesign meant to read as a dashboard at a glance rather
-/// than a labelled stat. `.round` line caps and a gradient stroke keep it
-/// from looking like a stock progress indicator.
+/// A ring for the headline figure. Round caps and a gradient stroke keep it
+/// from looking like a stock progress indicator, and a soft glow in the
+/// pressure colour says how it is going before the number is read.
 struct RadialGauge: View {
     let progress: Double   // 0...1
     let tint: Color
+    var lineWidth: CGFloat = 9
 
     var body: some View {
         ZStack {
-            Circle().stroke(Color.primary.opacity(0.08), lineWidth: 9)
+            Circle().stroke(Color.primary.opacity(0.08), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: max(0.001, min(progress, 1)))
-                .stroke(tint.gradient, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                .stroke(tint.gradient, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .shadow(color: tint.opacity(0.45), radius: lineWidth * 0.8)
         }
+        .padding(lineWidth / 2)
     }
 }
 
@@ -485,49 +497,54 @@ struct FilterBar: View {
     @ObservedObject var engine: Engine
 
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.tertiary).font(.system(size: 12))
-                TextField("Filter", text: $engine.search)
-                    .textFieldStyle(.plain)
-                    .frame(width: 170)
-                if !engine.search.isEmpty {
-                    Button { engine.search = "" } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
-                    }.buttonStyle(.plain)
+        BoostGlassContainer(spacing: 10) {
+            HStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.tertiary).font(.system(size: 12))
+                    TextField("Filter", text: $engine.search)
+                        .textFieldStyle(.plain)
+                        .frame(width: 170)
+                    if !engine.search.isEmpty {
+                        Button { engine.search = "" } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Clear the filter")
+                    }
                 }
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .boostGlassCapsule()
+
+                Spacer()
+
+                if !engine.pausedItems.isEmpty {
+                    Label("\(engine.pausedItems.count) paused", systemImage: "pause.circle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .boostGlassCapsule(tint: Color.orange.opacity(0.3))
+                }
+
+                if engine.autoQuitOnClose && !engine.needsAccessibility {
+                    Label("Close = quit", systemImage: "xmark.circle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.blue)
+                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .boostGlassCapsule(tint: Color.blue.opacity(0.3))
+                        .help("Apps quit when you close their last window")
+                }
+
+                SortControl(engine: engine)
+
+                Toggle("Show system processes", isOn: $engine.showSystem)
+                    .toggleStyle(.switch).controlSize(.mini)
+                    .font(.caption)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .boostGlassCapsule()
+                    .help("macOS internals. Protected ones can be seen but never closed or paused.")
             }
-            .padding(.horizontal, 8).padding(.vertical, 5)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
-
-            Spacer()
-
-            if !engine.pausedItems.isEmpty {
-                Label("\(engine.pausedItems.count) paused", systemImage: "pause.circle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(Color.orange.opacity(0.14), in: Capsule())
-            }
-
-            if engine.autoQuitOnClose && !engine.needsAccessibility {
-                Label("Close = quit", systemImage: "xmark.circle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.blue)
-                    .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.14), in: Capsule())
-                    .help("Apps quit when you close their last window")
-            }
-
-            SortControl(engine: engine)
-
-            Toggle("Show system processes", isOn: $engine.showSystem)
-                .toggleStyle(.switch).controlSize(.mini)
-                .font(.caption)
-                .help("macOS internals. Protected ones can be seen but never closed or paused.")
         }
-        .padding(.horizontal, 22).padding(.vertical, 9)
-        .background(.bar)
+        .padding(.horizontal, 18).padding(.vertical, 8)
     }
 }
 
@@ -563,15 +580,13 @@ struct SortControl: View {
                     .font(.system(size: 10, weight: .semibold))
                     .rotationEffect(.degrees(engine.sortAscending ? 0 : 180))
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .padding(4)
-            .contentShape(Rectangle())
-            .animation(.spring(response: 0.3, dampingFraction: 1.0), value: engine.sortAscending)
+            .buttonStyle(QuietButtonStyle())
+            .boostAnimation(.spring(response: 0.3, dampingFraction: 1.0), value: engine.sortAscending)
             .help(engine.sortAscending ? "Ascending — click for descending" : "Descending — click for ascending")
+            .accessibilityLabel(engine.sortAscending ? "Ascending" : "Descending")
         }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .boostGlassCapsule()
     }
 }
 
@@ -619,9 +634,14 @@ struct SectionHeader: View {
             }
             .buttonStyle(.plain)
         }
-        .animation(.spring(duration: 0.28, bounce: 0), value: engine.isExpanded(category))
+        .boostAnimation(.spring(duration: 0.28, bounce: 0), value: engine.isExpanded(category))
         .padding(.horizontal, 22).padding(.vertical, 7)
-        .background(.bar)
+        .background {
+            ZStack {
+                Color(nsColor: .windowBackgroundColor)
+                Color.primary.opacity(0.04)
+            }
+        }
         .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
 }
@@ -657,19 +677,19 @@ struct ItemRow: View {
                     Text(item.name)
                         .font(.system(size: 13, weight: .medium))
                         .lineLimit(1)
-                    if item.isPaused { badge("Paused", .orange) }
+                    if item.isPaused { Tag("Paused", .orange) }
                     if autoPause.isListed(item) {
-                        badge("Sleeps", .teal)
+                        Tag("Sleeps", .teal)
                             .help("Boost pauses this after \(autoPause.idleMinutes) minutes in the "
                                 + "background, and wakes it when you switch to it.")
                     }
-                    if locked { badge("Protected", .secondary) }
-                    else if kept { badge("Kept", .blue) }
+                    if locked { Tag("Protected", .secondary) }
+                    else if kept { Tag("Kept", .blue) }
                     // Big is not a problem — a browser is supposed to be big.
                     // A floor that keeps rising is, and it is invisible in a
                     // single reading.
                     if let grown = engine.growthOf(item) {
-                        badge("+\(fmtBytes(grown))", .purple)
+                        Tag("+\(fmtBytes(grown))", .purple)
                             .help("Its lowest memory use has risen by \(fmtBytes(grown)) "
                                 + "since Boost started watching — it is not giving back "
                                 + "what it takes.")
@@ -693,18 +713,10 @@ struct ItemRow: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .opacity(item.isPaused ? 0.62 : 1)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
-        }
+        .boostRow(hovered: hover.on)
         .padding(.horizontal, 22).padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
-        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
         .contextMenu {
             Button(kept ? "Stop protecting" : "Never close this") { engine.toggleKeep(item) }
                 .disabled(locked)
@@ -742,30 +754,35 @@ struct ItemRow: View {
     }
 
     private var rowActions: some View {
-        HStack(spacing: 3) {
-            Button {
-                item.isPaused ? engine.resume(item) : engine.pause(item)
-                engine.refresh()
-            } label: {
-                Image(systemName: item.isPaused ? "play.fill" : "pause.fill").font(.system(size: 10))
-            }
-            .buttonStyle(.borderless).disabled(locked)
-            .help(item.isPaused ? "Resume" : "Pause: freezes it at zero CPU and keeps its state")
-            .accessibilityLabel(item.isPaused ? "Resume \(item.name)" : "Pause \(item.name)")
+        BoostGlassContainer(spacing: 4) {
+            HStack(spacing: 4) {
+                Button {
+                    item.isPaused ? engine.resume(item) : engine.pause(item)
+                    engine.refresh()
+                } label: {
+                    Image(systemName: item.isPaused ? "play.fill" : "pause.fill").font(.system(size: 10))
+                        .boostIconButtonLabel()
+                }
+                .buttonStyle(.plain).disabled(locked)
+                .help(item.isPaused ? "Resume" : "Pause: freezes it at zero CPU and keeps its state")
+                .accessibilityLabel(item.isPaused ? "Resume \(item.name)" : "Pause \(item.name)")
 
-            Button { engine.quit(item); engine.refresh() } label: {
-                Image(systemName: "xmark").font(.system(size: 10))
-            }
-            .buttonStyle(.borderless).disabled(locked)
-            .help("Close")
-            .accessibilityLabel("Close \(item.name)")
+                Button { engine.quit(item); engine.refresh() } label: {
+                    Image(systemName: "xmark").font(.system(size: 10))
+                        .boostIconButtonLabel()
+                }
+                .buttonStyle(.plain).disabled(locked)
+                .help("Close")
+                .accessibilityLabel("Close \(item.name)")
 
-            Button { engine.toggleKeep(item) } label: {
-                Image(systemName: kept ? "pin.fill" : "pin").font(.system(size: 10))
+                Button { engine.toggleKeep(item) } label: {
+                    Image(systemName: kept ? "pin.fill" : "pin").font(.system(size: 10))
+                        .boostIconButtonLabel()
+                }
+                .buttonStyle(.plain).disabled(locked)
+                .help(kept ? "Stop protecting" : "Never close this")
+                .accessibilityLabel(kept ? "Stop protecting \(item.name)" : "Never close \(item.name)")
             }
-            .buttonStyle(.borderless).disabled(locked)
-            .help(kept ? "Stop protecting" : "Never close this")
-            .accessibilityLabel(kept ? "Stop protecting \(item.name)" : "Never close \(item.name)")
         }
         .foregroundStyle(.secondary)
     }
@@ -789,14 +806,6 @@ struct ItemRow: View {
                 .frame(width: 30, alignment: .trailing)
         }
     }
-
-    private func badge(_ text: String, _ color: Color) -> some View {
-        Text(text)
-            .font(.system(size: 9, weight: .semibold))
-            .padding(.horizontal, 5).padding(.vertical, 1.5)
-            .background(color.opacity(0.16), in: Capsule())
-            .foregroundStyle(color)
-    }
 }
 
 // MARK: - Footer
@@ -805,12 +814,14 @@ struct FooterBar: View {
     @ObservedObject var engine: Engine
 
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("\(engine.selectedItems.count) selected · \(fmtBytes(engine.selectedBytes))")
-                    .font(.system(size: 12, weight: .medium)).monospacedDigit()
-                Text("Pausing is reversible. Closing is not.")
-                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+        FloatingBar {
+            InfoPill {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("\(engine.selectedItems.count) selected · \(fmtBytes(engine.selectedBytes))")
+                        .font(.system(size: 12, weight: .medium)).monospacedDigit()
+                    Text("Pausing is reversible. Closing is not.")
+                        .font(.system(size: 10)).foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
@@ -821,6 +832,7 @@ struct FooterBar: View {
                 } label: {
                     Label("Resume All (\(engine.pausedItems.count))", systemImage: "play.fill")
                 }
+                .boostButton()
                 .controlSize(.large)
                 .keyboardShortcut("r", modifiers: [.command, .shift])
                 .tint(.orange)
@@ -829,6 +841,7 @@ struct FooterBar: View {
             Button {
                 engine.pauseSelected()
             } label: { Label("Pause", systemImage: "pause.fill") }
+                .boostButton()
                 .controlSize(.large)
                 .disabled(engine.selectedItems.isEmpty)
                 .help("Freeze at zero CPU without losing anything")
@@ -836,6 +849,7 @@ struct FooterBar: View {
             Button {
                 engine.quitSelected()
             } label: { Label("Close", systemImage: "xmark") }
+                .boostButton()
                 .controlSize(.large)
                 // Closing and Free Memory share one `busy` flag on Engine, so
                 // starting Close while a Free Memory run is still in flight
@@ -858,10 +872,8 @@ struct FooterBar: View {
                 Image(systemName: "ellipsis.circle")
             }
             .menuStyle(.borderlessButton).fixedSize().controlSize(.large)
+            .accessibilityLabel("More actions")
         }
-        .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(.regularMaterial)
-        .overlay(alignment: .top) { Divider().opacity(0.5) }
     }
 }
 
@@ -881,13 +893,17 @@ struct AccessibilityBanner: View {
             }
             Spacer()
             Button("Open Settings") { WindowWatcher.openAccessibilitySettings() }
-                .controlSize(.small)
+                .boostButton().controlSize(.small)
             Button("Turn Off") { engine.autoQuitOnClose = false }
-                .controlSize(.small)
+                .boostButton().controlSize(.small)
         }
-        .padding(.horizontal, 22).padding(.vertical, 9)
-        .background(Color.orange.opacity(0.12))
-        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(Color.orange.opacity(0.25), lineWidth: 1)
+        }
+        .padding(.horizontal, 18).padding(.vertical, 6)
     }
 }
 
@@ -896,10 +912,9 @@ struct Toast: View {
     var body: some View {
         Text(text)
             .font(.system(size: 12, weight: .medium))
-            .padding(.horizontal, 15).padding(.vertical, 9)
-            .background(.thickMaterial, in: Capsule())
-            .overlay(Capsule().stroke(Color.primary.opacity(0.08)))
-            .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .boostGlassCapsule()
+            .shadow(color: .black.opacity(0.14), radius: 12, y: 4)
             .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
@@ -915,6 +930,8 @@ struct Toast: View {
 struct Sparkline: View {
     let values: [Double]
     let tint: Color
+    /// Draws a dot on the newest reading, so the eye lands on "now".
+    var showsMarker = false
 
     var body: some View {
         GeometryReader { geo in
@@ -939,9 +956,17 @@ struct Sparkline: View {
                                      startPoint: .top, endPoint: .bottom))
 
                 Path { p in p.addLines(points) }
-                    .stroke(tint.opacity(0.85), style: StrokeStyle(lineWidth: 1.5,
-                                                                   lineCap: .round,
-                                                                   lineJoin: .round))
+                    .stroke(tint.opacity(0.9), style: StrokeStyle(lineWidth: 1.75,
+                                                                  lineCap: .round,
+                                                                  lineJoin: .round))
+
+                if showsMarker, let last = points.last {
+                    Circle().fill(tint.opacity(0.25)).frame(width: 16, height: 16)
+                        .position(last)
+                    Circle().fill(tint).frame(width: 7, height: 7)
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.9), lineWidth: 1.5))
+                        .position(last)
+                }
             }
         }
         .accessibilityHidden(true)      // the trend sentence beside it says this in words
@@ -998,11 +1023,15 @@ struct FirstRunCard: View {
             Button("Got it") {
                 withAnimation(.spring(duration: 0.3, bounce: 0)) { firstRun.dismissed = true }
             }
-            .controlSize(.small)
+            .boostButton().controlSize(.small)
         }
-        .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(Color.brand.opacity(0.07))
-        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(Color.brand.opacity(0.08), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(Color.brand.opacity(0.2), lineWidth: 1)
+        }
+        .padding(.horizontal, 18).padding(.vertical, 6)
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 }

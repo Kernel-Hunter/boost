@@ -71,20 +71,16 @@ struct HistoryCard: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     Button("Start at login") { login.set(true) }
-                        .controlSize(.small)
+                        .boostButton().controlSize(.small)
                     if let problem = login.problem {
                         Text(problem).font(.system(size: 10)).foregroundStyle(.orange)
                     }
                 }
             }
         }
-        .padding(.horizontal, 18).padding(.vertical, 11)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .padding(.horizontal, 18).padding(.bottom, 8)
+        .padding(.horizontal, 18).padding(.vertical, 12)
+        .boostSurface()
+        .padding(.horizontal, 18).padding(.bottom, 6)
     }
 
     private func recordedSpan(now: Date) -> TimeInterval {
@@ -159,6 +155,7 @@ struct HistoryChart: View {
                 }
             }
         }
+        .clipShape(Rectangle())
         .accessibilityLabel("Memory pressure history")
     }
 }
