@@ -51,7 +51,10 @@ struct DiskScanSafetyTests {
         "/Users/tester/Library/Messages",
         // Irreplaceable, and exactly what a careless "free up space" feature eats.
         "/Users/tester/Library/Application Support/MobileSync/Backup",
-        "/Users/tester/Library/Developer/Xcode/Archives",
+        // Archives are allowed, as an opt-in row. Xcode's other folders are not.
+        "/Users/tester/Library/Developer/Xcode/UserData",
+        "/Users/tester/Library/Developer/Xcode/Products",
+        "/Users/tester/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw",
     ])
     func refusesUserData(path: String) {
         #expect(!safe(path))
@@ -77,6 +80,12 @@ struct DiskScanSafetyTests {
         "/Users/tester/Library/Logs/SomeApp",
         "/Users/tester/Library/Developer/Xcode/DerivedData/App-abc123",
         "/Users/tester/Library/Developer/CoreSimulator/Caches/dyld",
+        "/Users/tester/Library/Developer/Xcode/iOS DeviceSupport/17.0 (21A329)",
+        "/Users/tester/Library/Developer/Xcode/watchOS DeviceSupport/10.0",
+        "/Users/tester/Library/Developer/Xcode/tvOS DeviceSupport/17.0",
+        "/Users/tester/Library/Developer/Xcode/visionOS DeviceSupport/1.0",
+        "/Users/tester/Library/Developer/Xcode/Archives/2025-01-01",
+        "/Users/tester/.swiftpm/cache/repositories",
         "/Users/tester/.npm/_cacache/index-v5",
         "/Users/tester/.cache/uv/wheels",
         "/Users/tester/.cargo/registry/cache",
@@ -96,6 +105,9 @@ struct DiskScanSafetyTests {
         "/Users/tester/Library/Developer",
         "/Users/tester/Library/Developer/Xcode",
         "/Users/tester/Library/Developer/CoreSimulator",
+        "/Users/tester/Library/Developer/CoreSimulator/Devices",
+        "/Users/tester/.swiftpm",
+        "/Users/tester/.swiftpm/configuration",
     ])
     func refusesUnclaimedSiblings(path: String) {
         #expect(!safe(path))

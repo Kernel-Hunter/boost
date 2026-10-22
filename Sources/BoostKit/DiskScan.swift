@@ -8,7 +8,9 @@ import Foundation
 /// the owning tool rebuilds it on demand (a package manager's download cache) or
 /// it is already refuse (the Trash). Anything that is a judgement call — your
 /// Downloads folder, a project's `node_modules`, an iPhone backup — is
-/// deliberately absent, however much space it would score. An app that reclaims
+/// deliberately absent, however much space it would score. The one exception is
+/// Xcode Archives, which are your own work: they appear as a separate row marked
+/// `userData`, never ticked for you and never part of "Select all". An app that reclaims
 /// 40 GB and takes one irreplaceable thing with it is a worse app than one that
 /// reclaims 4 GB and never does.
 public struct CleanupTarget: Identifiable, Sendable {
@@ -21,6 +23,10 @@ public struct CleanupTarget: Identifiable, Sendable {
     /// True when the owning tool simply rebuilds it. False for things that are
     /// merely finished with, like the Trash.
     public let regenerates: Bool
+    /// True for things the user made rather than a tool cached, like Xcode
+    /// Archives. These are never ticked for you, never part of "Select all",
+    /// not counted in the reclaimable total, and listed after everything else.
+    public var userData: Bool = false
     public var bytes: UInt64 = 0
 
     public var isEmpty: Bool { bytes == 0 }
@@ -34,8 +40,8 @@ public enum DiskScan {
 
     /// Every candidate. Paths that don't exist on a given Mac are dropped at
     /// scan time rather than listed as zero.
-    public static func targets() -> [CleanupTarget] {
-        let h = home
+    public static func targets(home overrideHome: URL? = nil) -> [CleanupTarget] {
+        let h = overrideHome ?? home
         return [
             CleanupTarget(
                 id: "trash", name: "Trash",
@@ -63,6 +69,26 @@ public enum DiskScan {
                 detail: "Cached simulator data. Does not touch the simulators themselves or "
                       + "anything installed in them.",
                 paths: [h.appending(path: "Library/Developer/CoreSimulator/Caches")],
+                regenerates: true),
+
+            CleanupTarget(
+                id: "device-support", name: "Xcode device support files",
+                detail: "Debug symbols Xcode copied from iPhones, iPads, Apple Watches, Apple TVs "
+                      + "and Apple Vision Pro devices you plugged in, one folder per OS version. "
+                      + "Xcode makes a version's folder again the next time a device on that "
+                      + "version is attached. Re-copying the symbols takes a few minutes.",
+                paths: [h.appending(path: "Library/Developer/Xcode/iOS DeviceSupport"),
+                        h.appending(path: "Library/Developer/Xcode/watchOS DeviceSupport"),
+                        h.appending(path: "Library/Developer/Xcode/tvOS DeviceSupport"),
+                        h.appending(path: "Library/Developer/Xcode/visionOS DeviceSupport")],
+                regenerates: true),
+
+            CleanupTarget(
+                id: "swiftpm", name: "Swift Package Manager cache",
+                detail: "Package sources and manifests SwiftPM keeps in ~/.swiftpm/cache. It "
+                      + "fetches again what a build needs. The copy under ~/Library/Caches is "
+                      + "part of Application caches below.",
+                paths: [h.appending(path: ".swiftpm/cache")],
                 regenerates: true),
 
             CleanupTarget(
@@ -111,7 +137,22 @@ public enum DiskScan {
                       + "middle of debugging something.",
                 paths: [h.appending(path: "Library/Logs")],
                 regenerates: true),
+
+            // Last, and kept apart from the caches above: this is not something
+            // a tool rebuilds. See `CleanupTarget.userData`.
+            CleanupTarget(
+                id: "xcode-archives", name: "Xcode Archives",
+                detail: "Archives of apps you built. They hold the debug symbols you need to read "
+                      + "crash reports from released builds. Remove only ones you no longer ship.",
+                paths: [h.appending(path: "Library/Developer/Xcode/Archives")],
+                regenerates: false,
+                userData: true),
         ]
+    }
+
+    /// What "Select all" ticks: every row that is a cache, and never user data.
+    public static func selectableIDs(_ targets: [CleanupTarget]) -> Set<String> {
+        Set(targets.filter { !$0.userData }.map(\.id))
     }
 
     // MARK: - Safety
@@ -155,6 +196,14 @@ public enum DiskScan {
             ["Library", "Logs"],
             ["Library", "Developer", "Xcode", "DerivedData"],
             ["Library", "Developer", "CoreSimulator", "Caches"],
+            ["Library", "Developer", "Xcode", "iOS DeviceSupport"],
+            ["Library", "Developer", "Xcode", "watchOS DeviceSupport"],
+            ["Library", "Developer", "Xcode", "tvOS DeviceSupport"],
+            ["Library", "Developer", "Xcode", "visionOS DeviceSupport"],
+            // User data, not a cache. Allowed only because the Archives row is
+            // opt-in; nothing else here may reach into Xcode's other folders.
+            ["Library", "Developer", "Xcode", "Archives"],
+            [".swiftpm", "cache"],
             [".npm", "_cacache"],
             [".cache", "uv"],
             [".cargo", "registry"],
@@ -240,13 +289,57 @@ public enum DiskScan {
 
     /// Measures every target. Slow enough (seconds, on a large cache) that it
     /// must not be called on the main thread.
-    public static func scan() -> [CleanupTarget] {
-        targets().map { target in
+    public static func scan(home overrideHome: URL? = nil) -> [CleanupTarget] {
+        let measured = targets(home: overrideHome).map { target in
             var t = target
             t.bytes = target.paths.reduce(0) { $0 + size(of: $1) }
             return t
         }
         .filter { !$0.isEmpty }
+        // User data always sorts after the caches, whatever order the catalog
+        // is edited into.
+        return measured.filter { !$0.userData } + measured.filter { $0.userData }
+    }
+
+    // MARK: - Docker (information only)
+
+    /// Where Docker Desktop keeps its virtual disk. Information only: nothing
+    /// here is ever offered for deletion, and none of these paths is in the
+    /// allowlist above.
+    public struct DockerImage: Sendable, Equatable {
+        public let path: URL
+        public let bytes: UInt64
+    }
+
+    /// The command Docker documents for freeing that space from inside Docker.
+    public static let dockerPruneCommand = "docker system prune"
+
+    /// Size of Docker Desktop's disk image, or nil when it is not there.
+    ///
+    /// Stats the known file paths one at a time and never lists a directory.
+    /// `~/Library/Containers` belongs to other apps, and listing inside one can
+    /// make macOS ask for permission. A plain `attributesOfItem` on a single
+    /// path is the whole read, and any failure means "do not show it".
+    ///
+    /// The image is a sparse file, so this is the size it may grow to, not
+    /// necessarily what it takes on disk right now.
+    public static func dockerImage(home overrideHome: URL? = nil) -> DockerImage? {
+        let h = overrideHome ?? home
+        let base = "Library/Containers/com.docker.docker/Data"
+        let candidates = [
+            "\(base)/vms/0/data/Docker.raw",
+            "\(base)/vms/0/Docker.raw",
+            "\(base)/vms/0/data/Docker.qcow2",
+            "\(base)/com.docker.driver.amd64-linux/Docker.qcow2",
+        ]
+        for relative in candidates {
+            let url = h.appending(path: relative)
+            guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+                  attrs[.type] as? FileAttributeType == .typeRegular,
+                  let size = (attrs[.size] as? NSNumber)?.uint64Value, size > 0 else { continue }
+            return DockerImage(path: url, bytes: size)
+        }
+        return nil
     }
 
     // MARK: - Removing
@@ -262,14 +355,15 @@ public enum DiskScan {
     /// place — tools expect their cache directory to exist.
     ///
     /// `dryRun` reports what would go without touching anything.
-    public static func clean(_ targets: [CleanupTarget], dryRun: Bool = false) -> CleanResult {
+    public static func clean(_ targets: [CleanupTarget], dryRun: Bool = false,
+                             home overrideHome: URL? = nil) -> CleanResult {
         let fm = FileManager.default
         var result = CleanResult()
 
         for target in targets {
             for root in target.paths {
                 guard fm.fileExists(atPath: root.path) else { continue }
-                guard isSafeToDelete(root) else {
+                guard isSafeToDelete(root, home: overrideHome) else {
                     result.refused.append(root.path)
                     continue
                 }
@@ -277,8 +371,8 @@ public enum DiskScan {
                                                             includingPropertiesForKeys: nil,
                                                             options: [])) ?? []
                 for child in children {
-                    if isSkipped(child) { continue }
-                    guard isSafeToDelete(child) else {
+                    if isSkipped(child, home: overrideHome) { continue }
+                    guard isSafeToDelete(child, home: overrideHome) else {
                         result.refused.append(child.path)
                         continue
                     }
