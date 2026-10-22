@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is memory pressure on a Mac? Green, yellow and red explained | Boost</title>
+<meta name="description" content="Memory pressure is how hard macOS works to find room for your apps. What green, yellow and red mean, how swap and compression fit in, and how to check it in Terminal.">
+<link rel="canonical" href="https://kernel-hunter.github.io/boost/guides/what-is-memory-pressure-on-mac.html">
+<meta property="og:url" content="https://kernel-hunter.github.io/boost/guides/what-is-memory-pressure-on-mac.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Boost">
+<meta property="og:title" content="What is memory pressure on a Mac? Green, yellow and red explained | Boost">
+<meta property="og:description" content="Memory pressure is how hard macOS works to find room for your apps. What green, yellow and red mean, how swap and compression fit in, and how to check it in Terminal.">
+<meta property="og:image" content="https://kernel-hunter.github.io/boost/images/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#101514">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "What is memory pressure on a Mac?",
+  "description": "Memory pressure is how hard macOS works to find room for your apps. What green, yellow and red mean, how swap and compression fit in, and how to check it in Terminal.",
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Karim Masmoudi",
+    "url": "https://github.com/Kernel-Hunter"
+  },
+  "image": "https://kernel-hunter.github.io/boost/images/social-preview.png",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://kernel-hunter.github.io/boost/guides/what-is-memory-pressure-on-mac.html"
+  }
+}
+</script>
+<style>
+:root {
+  --bg: #fbfcfc; --fg: #14201d; --muted: #5b6b66; --card: #ffffff; --line: #e1e8e6;
+  --brand: #159e86; --brand-fg: #ffffff; --code: #eef3f2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101514; --fg: #e8f0ee; --muted: #93a6a1; --card: #171e1c; --line: #26302e;
+    --brand: #3fd1b0; --brand-fg: #08130f; --code: #1c2523;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--brand); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.prose { max-width: 720px; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+nav .name { font-weight: 700; font-size: 20px; color: var(--fg); text-decoration: none; }
+.navlinks { display: flex; align-items: center; gap: 18px; }
+.navlinks a { color: var(--fg); text-decoration: none; font-size: 15px; }
+.navlinks a.gh { border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; }
+.navlinks a.here { color: var(--muted); }
+h1 { font-size: clamp(30px, 4.6vw, 44px); line-height: 1.12; margin: 36px 0 14px; letter-spacing: -0.02em; }
+.byline { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+.short { font-size: 19px; margin: 0 0 8px; }
+h2 { font-size: 25px; line-height: 1.25; margin: 40px 0 10px; letter-spacing: -0.01em; }
+p { margin: 0 0 16px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 8px; }
+code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0 0 18px; }
+pre code { background: none; padding: 0; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0 0 20px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.tablewrap { overflow-x: auto; }
+.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+  border-radius: 10px; padding: 16px 18px; color: var(--muted); font-size: 15px; margin: 28px 0 0; }
+.note p { margin: 0 0 10px; }
+.note p:last-child { margin: 0; }
+.related { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
+.related h2 { font-size: 19px; margin: 0 0 10px; }
+.related ul { list-style: none; padding: 0; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.card h2 { font-size: 18px; margin: 0 0 6px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.card a { text-decoration: none; color: var(--fg); }
+.card a:hover h2 { color: var(--brand); }
+footer { margin-top: 56px; padding: 28px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+@media (max-width: 800px) {
+  .grid { grid-template-columns: 1fr; }
+  .navlinks { gap: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="name" href="../index.html">Boost</a>
+    <div class="navlinks">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Guides</a>
+      <a class="gh" href="https://github.com/Kernel-Hunter/boost">GitHub</a>
+    </div>
+  </nav>
+  <main class="prose">
+<h1>What is memory pressure on a Mac?</h1>
+<p class="byline">By Karim Masmoudi, published 22 October 2026</p>
+<p class="short">Memory pressure is macOS's own measure of how hard it is working to find room for what your apps need. Green is fine. Yellow means macOS is working harder and may need more RAM eventually. Red means it needs more RAM than it has. It is a better health check than the amount of free memory, which is almost always low on a healthy Mac.</p>
+
+<h2>What green, yellow and red mean</h2>
+<p>Apple's support page for Activity Monitor gives the three states in plain terms:</p>
+<ul>
+<li>Green: the Mac is using all of its RAM efficiently.</li>
+<li>Yellow: the Mac might eventually need more RAM.</li>
+<li>Red: the Mac needs more RAM.</li>
+</ul>
+<p>Apple's page is <a href="https://support.apple.com/kb/PH19650">Check if your Mac needs more RAM in Activity Monitor</a>. A brief yellow spike when you open a huge project, export a video or start a virtual machine is not a problem. Yellow that stays for hours while you do ordinary work is.</p>
+
+<h2>How macOS decides</h2>
+<p>Apple's Activity Monitor guide says memory pressure is determined by the amount of free memory, the swap rate, wired memory and file cached memory. Apple does not publish the exact formula or the cutoffs for each color, so any specific number you read elsewhere is a guess.</p>
+<p>Underneath the graph, the kernel also sends low memory notifications to apps. Many apps respond by dropping their own caches, which is part of why a well written app shrinks when you open something large.</p>
+
+<h2>Swap and compression</h2>
+<p>When memory gets tight, macOS has several moves. It can drop file cache, which is cheap because the files are still on the disk. It can compress data from idle apps so it takes less room. When that is not enough, it writes data to swap files on the startup disk. The order and details vary between macOS versions, but that is the general shape.</p>
+<p>So swap is not a failure by itself. A little swap with a green graph is normal. The sign to watch is swap that keeps growing during a work session while pressure sits at yellow or red. Swap Used can also stay above zero for a while after demand drops, so growth matters more than the number.</p>
+
+<h2>When to worry</h2>
+<ul>
+<li>The graph is yellow or red for long stretches, not just a spike.</li>
+<li>Swap Used climbs steadily while you work.</li>
+<li>Apps stall when you switch between them, or the spinning beach ball shows up often.</li>
+</ul>
+<p>If none of that applies, a high Memory Used figure with a green graph is not something to fix. The <a href="how-to-free-up-ram-on-mac.html">guide to freeing RAM</a> covers what to do when it does apply.</p>
+
+<h2>How to see it</h2>
+<p>In Activity Monitor, the Memory tab shows the graph at the bottom, along with Memory Used, Cached Files and Swap Used. It only updates while the window is open, so a menu bar app is handier if you want it in view all day. iStat Menus, the open source Stats app and Boost can all show it there.</p>
+<p>In Terminal, <code>memory_pressure</code> run with no options only prints statistics. This is trimmed output from a 16 GB Apple silicon Mac:</p>
+<pre><code>$ memory_pressure
+The system has 17179869184 (1048576 pages with a page size of 16384).
+
+Stats:
+Pages free: 27388
+Pages purgeable: 930
+...
+Swap I/O:
+Swapins: 20221
+Swapouts: 50512
+...
+System-wide memory free percentage: 37%</code></pre>
+<p>The last line is much higher than the Pages free line works out to, so it is clearly counting memory macOS can reclaim and not just pages sitting empty. Do not run <code>memory_pressure</code> with the <code>-l</code>, <code>-p</code> or <code>-S</code> options. Those deliberately create or simulate pressure on the system.</p>
+<p><code>vm_stat</code> prints the raw counters. Give it a number and it repeats every that many seconds:</p>
+<pre><code>$ vm_stat 5
+Mach Virtual Memory Statistics: (page size of 16384 bytes)</code></pre>
+<p>Multiply any page count by the page size on the first line. Apple silicon Macs use 16384 bytes, Intel Macs use 4096. With an interval, the first row shows totals and later rows show the change. Swapins and Swapouts are the lines to watch.</p>
+<p>To see the swap total on its own:</p>
+<pre><code>$ sysctl vm.swapusage
+vm.swapusage: total = 1024.00M  used = 303.25M  free = 720.75M  (encrypted)</code></pre>
+<p>The total can grow as macOS creates more swap files. Terminal gives raw numbers with no color, so use it to confirm a trend you have already seen in Activity Monitor.</p>
+
+<div class="note">
+<p>Boost shows pressure in the menu bar, keeps a reading every minute for a week, and can alert you when swap passes a size you pick. It is free and open source (GPL-3.0), and not notarized by Apple, so the first launch needs an extra step, described on its <a href="../index.html">home page</a>.</p>
+</div>
+<div class="related"><h2>More guides</h2><ul><li><a href="how-to-free-up-ram-on-mac.html">How to free up RAM on a Mac: what works and what does not</a></li><li><a href="is-cached-memory-bad-on-mac.html">Is cached memory bad on a Mac?</a></li><li><a href="mac-system-data-storage-explained.html">Mac System Data storage explained: what it is and what is safe to delete</a></li><li><a href="how-to-uninstall-mac-apps-completely.html">How to uninstall Mac apps completely</a></li></ul><p><a href="index.html">All guides</a></p></div>
+  </main>
+
+  <footer>
+    Written by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>. Boost is free and open source, GPL-3.0.
+    <a href="https://github.com/Kernel-Hunter/boost">Source on GitHub</a>
+  </footer>
+</div>
+</body>
+</html>

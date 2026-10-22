@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mac System Data storage explained: what is safe to delete | Boost</title>
+<meta name="description" content="What System Data in Mac Storage settings contains, how to see what is big with read-only commands and disk tools, and what is safe to delete. Use the Trash.">
+<link rel="canonical" href="https://kernel-hunter.github.io/boost/guides/mac-system-data-storage-explained.html">
+<meta property="og:url" content="https://kernel-hunter.github.io/boost/guides/mac-system-data-storage-explained.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Boost">
+<meta property="og:title" content="Mac System Data storage explained: what is safe to delete | Boost">
+<meta property="og:description" content="What System Data in Mac Storage settings contains, how to see what is big with read-only commands and disk tools, and what is safe to delete. Use the Trash.">
+<meta property="og:image" content="https://kernel-hunter.github.io/boost/images/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#101514">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Mac System Data storage explained: what it is and what is safe to delete",
+  "description": "What System Data in Mac Storage settings contains, how to see what is big with read-only commands and disk tools, and what is safe to delete. Use the Trash.",
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Karim Masmoudi",
+    "url": "https://github.com/Kernel-Hunter"
+  },
+  "image": "https://kernel-hunter.github.io/boost/images/social-preview.png",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://kernel-hunter.github.io/boost/guides/mac-system-data-storage-explained.html"
+  }
+}
+</script>
+<style>
+:root {
+  --bg: #fbfcfc; --fg: #14201d; --muted: #5b6b66; --card: #ffffff; --line: #e1e8e6;
+  --brand: #159e86; --brand-fg: #ffffff; --code: #eef3f2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101514; --fg: #e8f0ee; --muted: #93a6a1; --card: #171e1c; --line: #26302e;
+    --brand: #3fd1b0; --brand-fg: #08130f; --code: #1c2523;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--brand); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.prose { max-width: 720px; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+nav .name { font-weight: 700; font-size: 20px; color: var(--fg); text-decoration: none; }
+.navlinks { display: flex; align-items: center; gap: 18px; }
+.navlinks a { color: var(--fg); text-decoration: none; font-size: 15px; }
+.navlinks a.gh { border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; }
+.navlinks a.here { color: var(--muted); }
+h1 { font-size: clamp(30px, 4.6vw, 44px); line-height: 1.12; margin: 36px 0 14px; letter-spacing: -0.02em; }
+.byline { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+.short { font-size: 19px; margin: 0 0 8px; }
+h2 { font-size: 25px; line-height: 1.25; margin: 40px 0 10px; letter-spacing: -0.01em; }
+p { margin: 0 0 16px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 8px; }
+code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0 0 18px; }
+pre code { background: none; padding: 0; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0 0 20px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.tablewrap { overflow-x: auto; }
+.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+  border-radius: 10px; padding: 16px 18px; color: var(--muted); font-size: 15px; margin: 28px 0 0; }
+.note p { margin: 0 0 10px; }
+.note p:last-child { margin: 0; }
+.related { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
+.related h2 { font-size: 19px; margin: 0 0 10px; }
+.related ul { list-style: none; padding: 0; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.card h2 { font-size: 18px; margin: 0 0 6px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.card a { text-decoration: none; color: var(--fg); }
+.card a:hover h2 { color: var(--brand); }
+footer { margin-top: 56px; padding: 28px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+@media (max-width: 800px) {
+  .grid { grid-template-columns: 1fr; }
+  .navlinks { gap: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="name" href="../index.html">Boost</a>
+    <div class="navlinks">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Guides</a>
+      <a class="gh" href="https://github.com/Kernel-Hunter/boost">GitHub</a>
+    </div>
+  </nav>
+  <main class="prose">
+<h1>Mac System Data storage explained: what it is and what is safe to delete</h1>
+<p class="byline">By Karim Masmoudi, published 22 October 2026</p>
+<p class="short">System Data is the catch-all category in Mac Storage settings. Apple describes it as the space used by all the Apple and third party files that do not belong to a more specific category. In practice that means caches, logs, app support data, local Time Machine snapshots, device backups, developer files and more. Apple does not give you one button to clear it. You can shrink it by finding what is big and removing the things that get rebuilt, and the rule for all of it is to move things to the Trash first so you can put them back.</p>
+
+<h2>What is in it</h2>
+<p>The mix differs from one Mac to the next. Common contents:</p>
+<ul>
+<li>Caches and logs from macOS and your apps, in the Library folders.</li>
+<li>Application support data, including large app libraries.</li>
+<li>Local Time Machine snapshots on the startup disk.</li>
+<li>iPhone and iPad backups, if you back up to the Mac.</li>
+<li>Developer files such as Xcode build data, device support files and simulators.</li>
+<li>Virtual machine images, fonts and plug-ins.</li>
+</ul>
+<p>Depending on your macOS version, some of these, such as developer files or backups, may be listed under their own line in Storage instead. The size also moves around on its own after updates and restarts.</p>
+<p>Apple says Time Machine takes a local snapshot about every hour, keeps it for 24 hours, and removes snapshots automatically as they age or when the system needs the space. Apple also says the space they use counts as available storage, so macOS can free it when it needs the room. Apple's way to remove them early is to turn off automatic backups for a few minutes. See <a href="https://support.apple.com/102154">About Time Machine local snapshots</a>.</p>
+
+<h2>See what is big without deleting anything</h2>
+<p>Start in System Settings, General, Storage. Apple lists this and other ways to free space on its page <a href="https://support.apple.com/ht206996">Free up storage space on Mac</a>.</p>
+<p>For more detail, these Terminal commands only read:</p>
+<pre><code># the biggest folders inside your Library
+du -h -d 1 ~/Library | sort -hr | head
+
+# the two usual suspects
+du -sh ~/Library/Caches ~/Library/Logs
+
+# app data, largest first
+du -h -d 1 ~/Library/Application\ Support | sort -hr | head -15
+
+# iPhone and iPad backups
+du -sh ~/Library/Application\ Support/MobileSync/Backup
+
+# local Time Machine snapshots
+tmutil listlocalsnapshots /</code></pre>
+<p>Terminal may report "Operation not permitted" for some folders unless it has Full Disk Access. The sizes can differ a little from Finder's. A visual tool is often easier. DaisyDisk (paid), GrandPerspective, OmniDiskSweeper and the command line tool ncdu all show what is taking space.</p>
+
+<h2>What is safe to delete</h2>
+<p>These are usually fine to remove, one at a time, with the app quit:</p>
+<ul>
+<li>A single app's folder in <code>~/Library/Caches</code>. The app rebuilds it, and its first launch may be slower.</li>
+<li>Old logs in <code>~/Library/Logs</code>.</li>
+<li>Xcode's DerivedData folder, if you build apps. Xcode regenerates it.</li>
+<li>Installers you already used (.dmg and .pkg files) in Downloads.</li>
+<li><code>node_modules</code> and build folders in projects you no longer work on. A package install rebuilds them.</li>
+<li>Old iPhone and iPad backups, but only after checking the date and device, because a backup can be the only copy of something.</li>
+</ul>
+
+<h2>What to leave alone</h2>
+<ul>
+<li>Anything under <code>/System</code>, <code>/Library</code> or <code>/private</code>, including the swap files in <code>/private/var/vm</code>.</li>
+<li>Application Support, Containers and Group Containers for apps you still use. They can hold documents, settings and history.</li>
+<li>Mail, Messages and Photos data.</li>
+<li>iCloud Drive and other synced folders. Deleting there deletes the cloud copy too.</li>
+<li>Anything you cannot identify.</li>
+</ul>
+
+<h2>Move to the Trash, do not rm</h2>
+<p>Use Finder and move items to the Trash. Use the Mac for a few days, then empty it. If something breaks, use Put Back. Avoid <code>sudo rm -rf</code> for this job. It skips the Trash, and one wrong path cannot be undone.</p>
+
+<div class="note">
+<p>Boost is one option among these. Its Disk tab lists rebuildable caches such as Homebrew, npm and Xcode DerivedData, with nothing ticked, and unlike the rest it deletes instead of using the Trash, and says so on screen. Its Projects tab finds old node_modules and build folders, and its Large Files tab lists the biggest files in Downloads, Documents and similar folders. Both send things to the Trash. It does not touch iOS backups or Downloads in the Disk tab.</p>
+<p>Boost is free and open source (GPL-3.0), and not notarized by Apple, so the first launch needs an extra step, described on its <a href="../index.html">home page</a>.</p>
+</div>
+<div class="related"><h2>More guides</h2><ul><li><a href="how-to-free-up-ram-on-mac.html">How to free up RAM on a Mac: what works and what does not</a></li><li><a href="what-is-memory-pressure-on-mac.html">What is memory pressure on a Mac?</a></li><li><a href="is-cached-memory-bad-on-mac.html">Is cached memory bad on a Mac?</a></li><li><a href="how-to-uninstall-mac-apps-completely.html">How to uninstall Mac apps completely</a></li></ul><p><a href="index.html">All guides</a></p></div>
+  </main>
+
+  <footer>
+    Written by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>. Boost is free and open source, GPL-3.0.
+    <a href="https://github.com/Kernel-Hunter/boost">Source on GitHub</a>
+  </footer>
+</div>
+</body>
+</html>

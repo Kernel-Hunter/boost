@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to free up RAM on a Mac: what works and what does not | Boost</title>
+<meta name="description" content="Most Macs do not need RAM freed. Read memory pressure, quit or pause heavy apps, trim tabs and login items, and skip RAM cleaners. What helps and what does not.">
+<link rel="canonical" href="https://kernel-hunter.github.io/boost/guides/how-to-free-up-ram-on-mac.html">
+<meta property="og:url" content="https://kernel-hunter.github.io/boost/guides/how-to-free-up-ram-on-mac.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Boost">
+<meta property="og:title" content="How to free up RAM on a Mac: what works and what does not | Boost">
+<meta property="og:description" content="Most Macs do not need RAM freed. Read memory pressure, quit or pause heavy apps, trim tabs and login items, and skip RAM cleaners. What helps and what does not.">
+<meta property="og:image" content="https://kernel-hunter.github.io/boost/images/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#101514">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to free up RAM on a Mac: what works and what does not",
+  "description": "Most Macs do not need RAM freed. Read memory pressure, quit or pause heavy apps, trim tabs and login items, and skip RAM cleaners. What helps and what does not.",
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Karim Masmoudi",
+    "url": "https://github.com/Kernel-Hunter"
+  },
+  "image": "https://kernel-hunter.github.io/boost/images/social-preview.png",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://kernel-hunter.github.io/boost/guides/how-to-free-up-ram-on-mac.html"
+  }
+}
+</script>
+<style>
+:root {
+  --bg: #fbfcfc; --fg: #14201d; --muted: #5b6b66; --card: #ffffff; --line: #e1e8e6;
+  --brand: #159e86; --brand-fg: #ffffff; --code: #eef3f2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101514; --fg: #e8f0ee; --muted: #93a6a1; --card: #171e1c; --line: #26302e;
+    --brand: #3fd1b0; --brand-fg: #08130f; --code: #1c2523;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--brand); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.prose { max-width: 720px; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+nav .name { font-weight: 700; font-size: 20px; color: var(--fg); text-decoration: none; }
+.navlinks { display: flex; align-items: center; gap: 18px; }
+.navlinks a { color: var(--fg); text-decoration: none; font-size: 15px; }
+.navlinks a.gh { border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; }
+.navlinks a.here { color: var(--muted); }
+h1 { font-size: clamp(30px, 4.6vw, 44px); line-height: 1.12; margin: 36px 0 14px; letter-spacing: -0.02em; }
+.byline { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+.short { font-size: 19px; margin: 0 0 8px; }
+h2 { font-size: 25px; line-height: 1.25; margin: 40px 0 10px; letter-spacing: -0.01em; }
+p { margin: 0 0 16px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 8px; }
+code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0 0 18px; }
+pre code { background: none; padding: 0; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0 0 20px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.tablewrap { overflow-x: auto; }
+.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+  border-radius: 10px; padding: 16px 18px; color: var(--muted); font-size: 15px; margin: 28px 0 0; }
+.note p { margin: 0 0 10px; }
+.note p:last-child { margin: 0; }
+.related { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
+.related h2 { font-size: 19px; margin: 0 0 10px; }
+.related ul { list-style: none; padding: 0; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.card h2 { font-size: 18px; margin: 0 0 6px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.card a { text-decoration: none; color: var(--fg); }
+.card a:hover h2 { color: var(--brand); }
+footer { margin-top: 56px; padding: 28px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+@media (max-width: 800px) {
+  .grid { grid-template-columns: 1fr; }
+  .navlinks { gap: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="name" href="../index.html">Boost</a>
+    <div class="navlinks">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Guides</a>
+      <a class="gh" href="https://github.com/Kernel-Hunter/boost">GitHub</a>
+    </div>
+  </nav>
+  <main class="prose">
+<h1>How to free up RAM on a Mac: what works and what does not</h1>
+<p class="byline">By Karim Masmoudi, published 22 October 2026</p>
+<p class="short">Most of the time you do not need to free any RAM. A Mac that shows very little free memory is behaving normally, because macOS fills spare RAM with cached files. What matters is memory pressure. If the graph in Activity Monitor is green, leave the Mac alone. If it stays yellow or red, quit or pause the heaviest apps, close browser tabs and trim your login items. A tool that "cleans" RAM gives you a better looking number for a few minutes and fixes nothing.</p>
+
+<h2>Read memory pressure, not free memory</h2>
+<p>Open Activity Monitor (Applications, then Utilities) and click the Memory tab. The graph at the bottom is Memory Pressure. Apple's description is short: green means the Mac is using its RAM efficiently, yellow means it might eventually need more, and red means it needs more RAM now. Apple also says the graph is based on free memory, swap rate, wired memory and file cached memory, so it tracks how hard macOS is working to find room.</p>
+<p>Look at Swap Used next to it. A small, steady amount of swap is ordinary. Swap that keeps growing while you work is worth acting on. The <a href="what-is-memory-pressure-on-mac.html">memory pressure guide</a> goes through all of this in more detail.</p>
+
+<h2>What cached and compressed memory are</h2>
+<p>Cached Files is the contents of files macOS read recently and kept in otherwise unused RAM so the next read is quick. macOS gives that space back when an app asks for it, so it is not wasted memory. The <a href="is-cached-memory-bad-on-mac.html">cached memory guide</a> covers it.</p>
+<p>Compressed memory is data from idle apps that macOS squeezes into less space instead of writing it to the disk. Compressing is usually cheaper than swapping to the SSD, which is why a Mac with a lot of compressed memory can still feel fine.</p>
+
+<h2>Why RAM cleaners do not help</h2>
+<p>Many RAM cleaners run the <code>purge</code> command or something like it. Apple's own manual page describes <code>purge</code> as a way to approximate a cold start for performance analysis, and says it does not affect memory that apps have allocated. So it throws away the file cache. The number you watch improves, and then every file you need is read from the disk again, which makes things feel slower until the cache fills back up.</p>
+<p>The same goes for any tool that shows cached memory in red and offers to clear it.</p>
+
+<h2>What actually helps</h2>
+<p>If pressure really is yellow or red, work through these in order.</p>
+<ol>
+<li>Find the heavy apps. In the Memory tab, click the Memory column to sort. Browsers split into many processes, so check the browser's own task list too. Quit what you are not using. Closing a window often leaves the app running, so use Command-Q.</li>
+<li>Close browser tabs you are finished with. Chrome has a Memory Saver setting that frees memory from tabs you are not looking at.</li>
+<li>Trim login items. In System Settings, go to General, then Login Items &amp; Extensions (the exact name varies a little between macOS versions). Anything that opens at login and sits in the background uses memory all day. Apple's page on <a href="https://support.apple.com/guide/mac-help/open-items-automatically-when-you-log-in-mh15189/mac">login items</a> shows where to look.</li>
+<li>Quit and reopen the one app that has grown to many gigabytes. That clears a slow leak without touching anything else.</li>
+<li>Restart if the Mac has been up for weeks and pressure stays yellow after you have quit the big apps. A restart is rarely needed otherwise.</li>
+</ol>
+
+<h2>Apple silicon and buying more</h2>
+<p>On Apple silicon the memory sits in the same package as the processor and is shared between the CPU and the GPU. You cannot add RAM later, so the amount you buy is the amount you keep. Some older Intel Macs do let you upgrade.</p>
+<p>Buy more only if memory pressure is regularly yellow or red during your normal work, after you have dealt with the items above. If the graph is green most of the day, more RAM will not make the Mac faster.</p>
+
+<div class="note">
+<p>Boost has a Free Memory button, so here is what it does and does not do. It runs Apple's <code>memory_pressure</code> tool, which allocates memory until macOS decides it is running low. That makes macOS compress and release idle pages. Boost reads the memory figures before and after and reports only what actually stopped being used, and it stops early if swap starts to grow. In practice that is often a few hundred MB, and up to about 1 GB. It is a small nudge. If pressure is red, quit or pause the heavy apps instead.</p>
+<p>Boost is free and open source (GPL-3.0) and shows pressure, swap, cached and compressed memory from the menu bar. It is not notarized by Apple, so the first launch needs an extra step, described on its <a href="../index.html">home page</a>.</p>
+</div>
+<div class="related"><h2>More guides</h2><ul><li><a href="what-is-memory-pressure-on-mac.html">What is memory pressure on a Mac?</a></li><li><a href="is-cached-memory-bad-on-mac.html">Is cached memory bad on a Mac?</a></li><li><a href="mac-system-data-storage-explained.html">Mac System Data storage explained: what it is and what is safe to delete</a></li><li><a href="how-to-uninstall-mac-apps-completely.html">How to uninstall Mac apps completely</a></li></ul><p><a href="index.html">All guides</a></p></div>
+  </main>
+
+  <footer>
+    Written by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>. Boost is free and open source, GPL-3.0.
+    <a href="https://github.com/Kernel-Hunter/boost">Source on GitHub</a>
+  </footer>
+</div>
+</body>
+</html>

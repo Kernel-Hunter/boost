@@ -58,6 +58,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 nav .name { font-weight: 700; font-size: 20px; }
 nav a.gh { color: var(--fg); text-decoration: none; font-size: 15px; border: 1px solid var(--line);
   padding: 7px 14px; border-radius: 999px; }
+.navlinks { display: flex; align-items: center; gap: 18px; }
+.navlinks a.guides { color: var(--fg); text-decoration: none; font-size: 15px; }
 .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 48px 0 72px; }
 h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1.08; margin: 0 0 18px; letter-spacing: -0.02em; }
 .lead { font-size: 20px; color: var(--muted); margin: 0 0 28px; }
@@ -102,7 +104,10 @@ footer { padding: 36px 0 56px; color: var(--muted); font-size: 14px; border-top:
 <div class="wrap">
   <nav>
     <div class="name">Boost</div>
-    <a class="gh" href="https://github.com/Kernel-Hunter/boost">View on GitHub</a>
+    <div class="navlinks">
+      <a class="guides" href="guides/index.html">Guides</a>
+      <a class="gh" href="https://github.com/Kernel-Hunter/boost">View on GitHub</a>
+    </div>
   </nav>
 
   <header class="hero">
@@ -162,7 +167,8 @@ footer { padding: 36px 0 56px; color: var(--muted); font-size: 14px; border-top:
     Boost is GPL-3.0 and built by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>.
     <a href="https://github.com/Kernel-Hunter/boost">Source</a> &middot;
     <a href="https://github.com/Kernel-Hunter/boost/releases">Releases</a> &middot;
-    <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md">Security</a> &middot;
+    <a href="guides/index.html">Guides</a>
   </footer>
 </div>
 <script>
