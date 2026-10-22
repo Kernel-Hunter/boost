@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security problem
+    url: https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md
+    about: Please read the security policy before reporting something that could harm a Mac or its data.

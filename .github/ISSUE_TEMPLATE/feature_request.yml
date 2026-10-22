@@ -1,0 +1,21 @@
+name: Feature request
+description: An idea that would make Boost more useful
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+      description: Boost only removes things it can show you first, moves them to the Trash where it can, and never ticks anything for you. Ideas that fit that are easiest to build.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you use today
+      description: Another app, a script, or doing it by hand.

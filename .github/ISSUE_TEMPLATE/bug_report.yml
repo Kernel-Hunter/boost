@@ -1,0 +1,36 @@
+name: Bug report
+description: Something in Boost did not work as it should
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what Boost did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Memory report
+      description: In the menu bar popover, press Copy Report and paste it here. It holds memory figures and app names only, with no file paths or user name. Skip this for bugs that are not about memory.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Boost version
+      description: Shown in the first line of the report, or in Finder under Get Info.
+      placeholder: "1.3.1"
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      placeholder: "macOS 15.1, MacBook Air M2"
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you installed it
+      options:
+        - Homebrew
+        - Downloaded the zip
+        - Built from source
