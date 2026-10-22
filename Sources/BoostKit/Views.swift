@@ -41,6 +41,7 @@ enum IconCache {
 
 public enum Tab: String, CaseIterable, Identifiable {
     case memory, disk, projects, largeFiles, uninstall
+    case aiModels
     public var id: String { rawValue }
 
     var title: String {
@@ -50,6 +51,7 @@ public enum Tab: String, CaseIterable, Identifiable {
         case .projects:  return "Projects"
         case .largeFiles: return "Large Files"
         case .uninstall: return "Uninstall"
+        case .aiModels: return "AI Models"
         }
     }
 
@@ -60,6 +62,7 @@ public enum Tab: String, CaseIterable, Identifiable {
         case .projects:  return "hammer"
         case .largeFiles: return "doc.text.magnifyingglass"
         case .uninstall: return "trash.square"
+        case .aiModels: return "cpu"
         }
     }
 
@@ -70,6 +73,7 @@ public enum Tab: String, CaseIterable, Identifiable {
         case .projects:  return "Old build and dependency folders in your projects"
         case .largeFiles: return "The biggest files in your own folders"
         case .uninstall: return "Remove an app and what it left behind"
+        case .aiModels: return "Models downloaded by Ollama, Hugging Face and LM Studio"
         }
     }
 }
@@ -110,6 +114,7 @@ public struct ContentView: View {
                 case .projects: ProjectView(engine: ProjectEngine.shared)
                 case .largeFiles: LargeFileView(engine: LargeFileEngine.shared)
                 case .uninstall: UninstallView()
+                case .aiModels: ModelView(engine: ModelEngine.shared)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
