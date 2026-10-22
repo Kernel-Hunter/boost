@@ -38,8 +38,9 @@ struct DiskView: View {
         let chosen = engine.selectedTargets
         if chosen.contains(where: \.userData) {
             return "This includes Xcode Archives, which are your own builds and their debug "
-                 + "symbols. Nothing rebuilds them. Without the symbols, crash reports from "
-                 + "those releases can no longer be read."
+                 + "symbols. Nothing rebuilds them. They go to the Trash, so you can put them "
+                 + "back until you empty it. Without the symbols, crash reports from those "
+                 + "releases can not be read."
         }
         if chosen.contains(where: { !$0.regenerates }) {
             return "This includes your Trash, which is not regenerable. Everything else "

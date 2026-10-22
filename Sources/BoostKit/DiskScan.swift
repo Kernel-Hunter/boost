@@ -383,7 +383,13 @@ public enum DiskScan {
                         continue
                     }
                     do {
-                        try fm.removeItem(at: child)
+                        // Caches are rebuilt by their owner, so they are removed
+                        // outright. User data goes to the Trash so it can be put back.
+                        if target.userData {
+                            try fm.trashItem(at: child, resultingItemURL: nil)
+                        } else {
+                            try fm.removeItem(at: child)
+                        }
                         result.freed += bytes
                         result.removed += 1
                     } catch {
