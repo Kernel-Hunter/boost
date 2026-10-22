@@ -19,7 +19,7 @@ public struct MenuBarContent: View {
     }
 
     public var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             summary
             freeButton
             if engine.history.count >= 2 { graph }
@@ -31,6 +31,7 @@ public struct MenuBarContent: View {
         }
         .padding(16)
         .frame(width: 340)
+        .boostBackdrop(center: UnitPoint(x: 0.2, y: 0.0), strength: 0.12, opaque: false)
     }
 
     // MARK: - Pieces
@@ -38,27 +39,28 @@ public struct MenuBarContent: View {
     private var summary: some View {
         HStack(spacing: 14) {
             ZStack {
-                RadialGauge(progress: engine.mem.pressure, tint: statusColor)
-                    .frame(width: 58, height: 58)
+                RadialGauge(progress: engine.mem.pressure, tint: statusColor, lineWidth: 7)
+                    .frame(width: 64, height: 64)
                 Text("\(Int(engine.mem.pressure * 100))")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText())
             }
-            .animation(.spring(response: 0.5, dampingFraction: 1.0), value: engine.mem.pressure)
+            .boostAnimation(.spring(response: 0.5, dampingFraction: 1.0), value: engine.mem.pressure)
             .accessibilityElement()
             .accessibilityLabel("Memory pressure")
             .accessibilityValue("\(Int(engine.mem.pressure * 100)) percent")
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Text(fmtBytes(engine.mem.used))
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(.boostValue)
                         .monospacedDigit()
                         .contentTransition(.numericText())
                     Text("of \(fmtBytes(engine.mem.total))")
                         .font(.system(size: 12)).foregroundStyle(.secondary)
                 }
+                .boostAnimation(.spring(response: 0.4, dampingFraction: 1.0), value: engine.mem.used)
                 Label(statusText, systemImage: "circle.fill")
                     .labelStyle(DotLabel())
                     .font(.system(size: 11, weight: .medium))
@@ -66,22 +68,23 @@ public struct MenuBarContent: View {
             }
             Spacer(minLength: 0)
         }
+        .padding(.horizontal, 2)
     }
 
     private var freeButton: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             Button {
                 engine.freeMemory()
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: "memorychip.fill")
+                        .boostPulse(active: engine.busy != nil)
                     Text(engine.busy ?? "Free Memory").fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
+                .padding(.vertical, 5)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.brand)
+            .boostProminentButton()
             .controlSize(.large)
             .disabled(engine.busy != nil)
 
@@ -94,32 +97,47 @@ public struct MenuBarContent: View {
                     .transition(.opacity)
             }
         }
-        .animation(.spring(duration: 0.3, bounce: 0), value: engine.lastReport)
+        .boostAnimation(.spring(duration: 0.3, bounce: 0), value: engine.lastReport)
     }
 
     private var graph: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Sparkline(values: Array(engine.history.pressureSeries.suffix(90)), tint: statusColor)
-                .frame(height: 40)
-                .padding(8)
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Pressure")
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int(engine.mem.pressure * 100))%")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(statusColor)
+                    .contentTransition(.numericText())
+            }
+            Sparkline(values: Array(engine.history.pressureSeries.suffix(90)), tint: statusColor,
+                      showsMarker: true)
+                .frame(height: 44)
+                .padding(.horizontal, 6)
             if let trend = engine.history.trend() {
                 Text(trend)
                     .font(.system(size: 11))
                     .foregroundStyle(engine.history.swapStarted ? statusColor : .secondary)
             }
         }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .boostSurface()
     }
 
     private var breakdown: some View {
-        HStack(spacing: 8) {
-            StatChip(title: "Cached", value: fmtBytes(engine.mem.cached),
-                     hint: "Counts as available. macOS gives it back on demand.")
-            StatChip(title: "Compressed", value: fmtBytes(engine.mem.compressed),
-                     hint: "Squeezed in RAM, which is faster than swap.")
-            StatChip(title: "Swap", value: engine.mem.swapUsed == 0 ? "None" : fmtBytes(engine.mem.swapUsed),
-                     hint: "The number that matters. None means your Mac is coping.",
-                     tint: engine.mem.swapUsed == 0 ? nil : statusColor)
+        BoostGlassContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                StatChip(title: "Cached", value: fmtBytes(engine.mem.cached),
+                         hint: "Counts as available. macOS gives it back on demand.")
+                StatChip(title: "Compressed", value: fmtBytes(engine.mem.compressed),
+                         hint: "Squeezed in RAM, which is faster than swap.")
+                StatChip(title: "Swap", value: engine.mem.swapUsed == 0 ? "None" : fmtBytes(engine.mem.swapUsed),
+                         hint: "The number that matters. None means your Mac is coping.",
+                         tint: engine.mem.swapUsed == 0 ? nil : statusColor)
+            }
         }
     }
 
@@ -134,11 +152,12 @@ public struct MenuBarContent: View {
     }
 
     private var hogs: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             Text("Using the most memory")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .padding(.bottom, 2)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 4)
             ForEach(topItems) { item in
                 PopoverRow(engine: engine, item: item)
             }
@@ -153,53 +172,47 @@ public struct MenuBarContent: View {
                     .foregroundStyle(.orange)
                 Spacer()
                 Button("Resume All") { engine.resumeEverything() }
-                    .controlSize(.small)
+                    .boostButton().controlSize(.small)
             }
             ForEach(engine.pausedItems) { item in
                 PopoverRow(engine: engine, item: item)
             }
         }
         .padding(10)
-        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(Color.orange.opacity(0.2), lineWidth: 1)
+        }
     }
 
     private var footer: some View {
-        HStack {
-            Button("Open Boost") {
-                NSApp.activate(ignoringOtherApps: true)
-                openMainWindow()
+        BoostGlassContainer(spacing: 6) {
+            HStack(spacing: 6) {
+                Button("Open Boost") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openMainWindow()
+                }
+                Spacer(minLength: 0)
+                Button("Copy Report") { copyReport() }
+                    .help("Copies memory figures and app names as plain text, for a bug report. Nothing is sent anywhere.")
+                Button("Settings") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                }
+                Button("Quit") { NSApp.terminate(nil) }
             }
-            Spacer()
-            Button(copied.on ? "Copied" : "Copy Report") { copyReport() }
-                .help("Copies memory figures and app names as plain text, for a bug report. Nothing is sent anywhere.")
-            Button("Settings") {
-                NSApp.activate(ignoringOtherApps: true)
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            }
-            Button("Quit") { NSApp.terminate(nil) }
+            .boostButton()
+            .controlSize(.small)
+            .font(.system(size: 11))
         }
-        .buttonStyle(.plain)
-        .font(.system(size: 11))
-        .foregroundStyle(.secondary)
+        .padding(.top, 2)
     }
 
     // MARK: - Helpers
 
-    private var statusText: String {
-        switch engine.mem.level {
-        case .easy:     return "Plenty of headroom"
-        case .moderate: return "Getting busy"
-        case .tight:    return "Under pressure"
-        }
-    }
-
-    private var statusColor: Color {
-        switch engine.mem.level {
-        case .easy:     return .green
-        case .moderate: return .orange
-        case .tight:    return .red
-        }
-    }
+    private var statusText: String { engine.mem.level.statusText }
+    private var statusColor: Color { engine.mem.level.color }
 
     private func copyReport() {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
@@ -236,7 +249,7 @@ struct PopoverRow: View {
     @StateObject private var hover = RowHover()
 
     var body: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 10) {
             if let icon = IconCache.icon(for: item) {
                 Image(nsImage: icon).resizable().frame(width: 22, height: 22)
             } else {
@@ -253,34 +266,42 @@ struct PopoverRow: View {
             Spacer(minLength: 6)
 
             if hover.on {
-                if item.isPaused {
-                    iconButton("play.fill", help: "Resume") { engine.resume(item) }
-                } else {
-                    iconButton("pause.fill", help: "Pause. Reversible.") { engine.pause(item) }
-                    iconButton("xmark", help: "Quit") { engine.quit(item) }
+                BoostGlassContainer(spacing: 4) {
+                    HStack(spacing: 4) {
+                        if item.isPaused {
+                            iconButton("play.fill", help: "Resume") { engine.resume(item) }
+                        } else {
+                            iconButton("pause.fill", help: "Pause. Reversible.") { engine.pause(item) }
+                            iconButton("xmark", help: "Quit") { engine.quit(item) }
+                        }
+                    }
                 }
+                .transition(.opacity)
             } else {
                 Text(fmtBytes(item.rssBytes))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .transition(.opacity)
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 4)
-        .background(hover.on ? Color.primary.opacity(0.06) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 7))
+        .frame(minHeight: 32)
+        .background(Color.primary.opacity(hover.on ? 0.06 : 0),
+                    in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+        .contentShape(Rectangle())
         .onHover { hover.on = $0 }
-        .animation(.easeOut(duration: 0.12), value: hover.on)
+        .boostAnimation(.easeOut(duration: 0.12), value: hover.on)
     }
 
     private func iconButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 10, weight: .bold))
-                .frame(width: 24, height: 20)
-                .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+                .boostIconButtonLabel()
         }
         .buttonStyle(.plain)
         .help(help)
+        .accessibilityLabel(help)
     }
 }
 
@@ -298,11 +319,12 @@ struct StatChip: View {
             Text(value)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .monospacedDigit()
+                .contentTransition(.numericText())
                 .foregroundStyle(tint ?? Color.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 9).padding(.vertical, 7)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
+        .padding(.horizontal, 11).padding(.vertical, 8)
+        .boostGlass(cornerRadius: Radius.medium, tint: tint.map { $0.opacity(0.22) })
         .help(hint)
     }
 }
@@ -327,7 +349,7 @@ struct DiskStrip: View {
     var body: some View {
         if let space = StartupVolume.space() {
             let usedFraction = 1 - Double(space.free) / Double(space.total)
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 7) {
                 HStack {
                     Label("Disk", systemImage: "internaldrive")
                         .font(.system(size: 11, weight: .semibold))
@@ -347,6 +369,8 @@ struct DiskStrip: View {
                     }
                     .frame(height: 5)
             }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .boostSurface()
         }
     }
 }

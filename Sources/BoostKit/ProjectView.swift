@@ -9,19 +9,9 @@ struct ProjectView: View {
             cutoffBar
             if engine.capped { cappedNotice }
             content
-            footer
+                .boostBottomBar { footer }
         }
-        .background {
-            ZStack {
-                Color(nsColor: .windowBackgroundColor)
-                RadialGradient(
-                    colors: [Color.brand.opacity(0.08), Color.clear],
-                    center: UnitPoint(x: 0.12, y: 0.1),
-                    startRadius: 0, endRadius: 420
-                )
-            }
-            .ignoresSafeArea()
-        }
+        .boostBackdrop()
         .overlay(alignment: .bottom) {
             if let report = engine.report {
                 Toast(text: report).padding(.bottom, 56)
@@ -45,70 +35,38 @@ struct ProjectView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 22) {
-            ZStack {
-                Circle().fill(Color.brand.opacity(0.14))
-                Image(systemName: "hammer.fill")
-                    .font(.system(size: 26))
-                    .foregroundStyle(Color.brand.gradient)
-            }
-            .frame(width: 72, height: 72)
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(engine.scanning && engine.items.isEmpty ? "-" : fmtBytes(engine.totalBytes))
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .kerning(-0.6)
-                        .foregroundStyle(Color.brand)
-                        .contentTransition(.numericText())
-                    Text("reclaimable").font(.system(size: 14)).foregroundStyle(.secondary)
+        ReclaimHeader(
+            symbol: "hammer.fill",
+            value: engine.scanning && engine.items.isEmpty ? "-" : fmtBytes(engine.totalBytes),
+            unit: "reclaimable", subtitle: subtitle, busy: engine.scanning || engine.trashing
+        ) {
+            Button {
+                engine.confirming = true
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "trash")
+                    Text(engine.trashing ? "Moving…" : "Move to Trash").fontWeight(.semibold)
                 }
-                Text(subtitle)
+                .frame(minWidth: 136)
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            // Teal, not red: this one can be undone.
+            .tint(Color.brandStrong)
+            .disabled(engine.selection.isEmpty || engine.trashing || engine.scanning)
+
+            Button {
+                engine.scan()
+            } label: {
+                Label("Rescan", systemImage: "arrow.clockwise")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
             }
-
-            Spacer(minLength: 0)
-
-            VStack(alignment: .trailing, spacing: 8) {
-                Button {
-                    engine.confirming = true
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "trash")
-                        Text(engine.trashing ? "Moving…" : "Move to Trash").fontWeight(.semibold)
-                    }
-                    .frame(minWidth: 136)
-                    .padding(.vertical, 7)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                // Teal, not red: this one can be undone.
-                .tint(Color.brand)
-                .disabled(engine.selection.isEmpty || engine.trashing || engine.scanning)
-
-                Button {
-                    engine.scan()
-                } label: {
-                    Label("Rescan", systemImage: "arrow.clockwise")
-                        .font(.caption)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                // Same reasoning as the Disk tab: a rescan mid-move would race
-                // the one that move starts when it finishes.
-                .disabled(engine.scanning || engine.trashing)
-            }
+            .buttonStyle(QuietButtonStyle())
+            // Same reasoning as the Disk tab: a rescan mid-move would race
+            // the one that move starts when it finishes.
+            .disabled(engine.scanning || engine.trashing)
         }
-        .padding(.horizontal, 22).padding(.vertical, 20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
-        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
     }
 
     private var subtitle: String {
@@ -139,7 +97,7 @@ struct ProjectView: View {
             .accessibilityLabel("Untouched for at least")
             Spacer()
         }
-        .padding(.horizontal, 22).padding(.vertical, 6)
+        .padding(.horizontal, 24).padding(.vertical, 8)
     }
 
     private var cappedNotice: some View {
@@ -150,7 +108,7 @@ struct ProjectView: View {
                 .foregroundStyle(.secondary)
         }
         .font(.system(size: 11))
-        .padding(.horizontal, 22).padding(.vertical, 4)
+        .padding(.horizontal, 24).padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -166,17 +124,12 @@ struct ProjectView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if engine.items.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "sparkles").font(.system(size: 26)).foregroundStyle(.tertiary)
-                Text(engine.scannedRoots.isEmpty ? "No project folders found."
-                                                 : "Nothing to move.")
-                    .foregroundStyle(.secondary)
-                Text(engine.scannedRoots.isEmpty
-                     ? "Boost looks in ~/Developer, ~/Projects, ~/code and a few similar places."
-                     : "Try a shorter time, or add another folder.")
-                    .font(.caption).foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            EmptyStateView(
+                symbol: "hammer",
+                title: engine.scannedRoots.isEmpty ? "No project folders found." : "Nothing to move.",
+                detail: engine.scannedRoots.isEmpty
+                    ? "Boost looks in ~/Developer, ~/Projects, ~/code and a few similar places."
+                    : "Try a shorter time, or add another folder.")
         } else {
             List {
                 ForEach(engine.items) { item in
@@ -195,24 +148,20 @@ struct ProjectView: View {
     // MARK: - Footer
 
     private var footer: some View {
-        HStack(spacing: 14) {
+        FloatingBar {
             Button(!engine.items.isEmpty && engine.selection.count == engine.items.count
                    ? "Select none" : "Select all") {
                 engine.setAll(engine.selection.count != engine.items.count)
             }
-            .buttonStyle(.plain)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .boostButton()
             .disabled(engine.items.isEmpty)
 
             Button {
                 engine.addFolder()
             } label: {
                 Label("Add Folder", systemImage: "plus")
-                    .font(.caption)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .boostButton()
             .help("Also look inside a folder of your own")
 
             if !engine.extraRoots.isEmpty {
@@ -224,7 +173,6 @@ struct ProjectView: View {
                     }
                 } label: {
                     Text("\(engine.extraRoots.count) added")
-                        .font(.caption)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -232,12 +180,11 @@ struct ProjectView: View {
 
             Spacer()
 
-            Text("Goes to the Trash, so you can put it back.")
-                .font(.system(size: 10)).foregroundStyle(.tertiary)
+            InfoPill {
+                Text("Goes to the Trash, so you can put it back.")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
         }
-        .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(.regularMaterial)
-        .overlay(alignment: .top) { Divider().opacity(0.5) }
     }
 }
 
@@ -266,11 +213,7 @@ private struct ProjectRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(item.projectName).font(.system(size: 13, weight: .medium))
-                    Text(item.kind.label)
-                        .font(.system(size: 9, weight: .semibold))
-                        .padding(.horizontal, 5).padding(.vertical, 1.5)
-                        .background(Color.brand.opacity(0.16), in: Capsule())
-                        .foregroundStyle(Color.brand)
+                    Tag(item.kind.label, Color.brand)
                 }
                 Text((item.url.path as NSString).abbreviatingWithTildeInPath)
                     .font(.system(size: 11, design: .monospaced))
@@ -296,19 +239,11 @@ private struct ProjectRow: View {
             .frame(width: 130, alignment: .trailing)
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
-        }
+        .boostRow(hovered: hover.on)
         .padding(.horizontal, 22).padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
         .onTapGesture { engine.toggle(item) }
         .help(item.url.path)
-        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
     }
 }
