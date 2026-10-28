@@ -63,27 +63,38 @@ private struct BoostGlassModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        #if compiler(>=6.2)
         if #available(macOS 26, *), !reduceTransparency {
             content.glassEffect(glass, in: shape)
         } else {
-            content
-                .background {
-                    ZStack {
-                        shape.fill(.regularMaterial)
-                        if let tint { shape.fill(tint.opacity(0.14)) }
-                    }
-                }
-                .overlay { shape.strokeBorder(Color.primary.opacity(0.07), lineWidth: 1) }
-                .shadow(color: .black.opacity(elevated ? 0.2 : 0), radius: elevated ? 16 : 0, y: elevated ? 6 : 0)
+            material(content, shape)
         }
+        #else
+        material(content, shape)
+        #endif
     }
 
+    /// What older systems, and builds without the macOS 26 SDK, get.
+    private func material(_ content: Content, _ shape: RoundedRectangle) -> some View {
+        content
+            .background {
+                ZStack {
+                    shape.fill(.regularMaterial)
+                    if let tint { shape.fill(tint.opacity(0.14)) }
+                }
+            }
+            .overlay { shape.strokeBorder(Color.primary.opacity(0.07), lineWidth: 1) }
+            .shadow(color: .black.opacity(elevated ? 0.2 : 0), radius: elevated ? 16 : 0, y: elevated ? 6 : 0)
+    }
+
+    #if compiler(>=6.2)
     @available(macOS 26, *)
     private var glass: Glass {
         var g = Glass.regular
         if let tint { g = g.tint(tint) }
         return interactive ? g.interactive() : g
     }
+    #endif
 }
 
 extension View {
@@ -123,11 +134,15 @@ struct BoostGlassContainer<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
+        #if compiler(>=6.2)
         if #available(macOS 26, *) {
             GlassEffectContainer(spacing: spacing) { content }
         } else {
             content
         }
+        #else
+        content
+        #endif
     }
 }
 
@@ -136,21 +151,29 @@ struct BoostGlassContainer<Content: View>: View {
 extension View {
     /// Glass button, or a bordered one on earlier systems.
     @ViewBuilder func boostButton() -> some View {
+        #if compiler(>=6.2)
         if #available(macOS 26, *) {
             buttonStyle(.glass)
         } else {
             buttonStyle(.bordered)
         }
+        #else
+        buttonStyle(.bordered)
+        #endif
     }
 
     /// The one primary action on a screen. Brand teal glass, or a solid
     /// prominent button. Pass `.red` for the destructive one.
     @ViewBuilder func boostProminentButton(tint: Color = .brandStrong) -> some View {
+        #if compiler(>=6.2)
         if #available(macOS 26, *) {
             buttonStyle(.glassProminent).tint(tint)
         } else {
             buttonStyle(.borderedProminent).tint(tint)
         }
+        #else
+        buttonStyle(.borderedProminent).tint(tint)
+        #endif
     }
 
     /// A small glyph button for a row that appears on hover.
@@ -433,10 +456,14 @@ extension View {
     /// softly out under it (`safeAreaBar` is the system's version of this); before
     /// that the bar is a plain inset and the rows stop above it.
     @ViewBuilder func boostBottomBar<Bar: View>(@ViewBuilder _ bar: () -> Bar) -> some View {
+        #if compiler(>=6.2)
         if #available(macOS 26, *) {
             safeAreaBar(edge: .bottom, spacing: 0) { bar() }
         } else {
             safeAreaInset(edge: .bottom, spacing: 0) { bar() }
         }
+        #else
+        safeAreaInset(edge: .bottom, spacing: 0) { bar() }
+        #endif
     }
 }
