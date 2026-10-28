@@ -11,19 +11,11 @@ struct ModelView: View {
                 notices
             }
             content
-            if engine.hasScanned { footer }
+                .boostBottomBar {
+                    if engine.hasScanned { footer }
+                }
         }
-        .background {
-            ZStack {
-                Color(nsColor: .windowBackgroundColor)
-                RadialGradient(
-                    colors: [Color.brand.opacity(0.08), Color.clear],
-                    center: UnitPoint(x: 0.12, y: 0.1),
-                    startRadius: 0, endRadius: 420
-                )
-            }
-            .ignoresSafeArea()
-        }
+        .boostBackdrop()
         .overlay(alignment: .bottom) {
             if let report = engine.report {
                 Toast(text: report).padding(.bottom, 56)
@@ -49,51 +41,21 @@ struct ModelView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 22) {
-            ZStack {
-                Circle().fill(Color.brand.opacity(0.14))
-                Image(systemName: "cpu")
-                    .font(.system(size: 26))
-                    .foregroundStyle(Color.brand.gradient)
-            }
-            .frame(width: 72, height: 72)
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(engine.scanning && engine.items.isEmpty ? "-" : fmtBytes(engine.totalBytes))
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .kerning(-0.6)
-                        .foregroundStyle(Color.brand)
-                        .contentTransition(.numericText())
-                    Text("in local AI models").font(.system(size: 14)).foregroundStyle(.secondary)
-                }
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 0)
-
+        ReclaimHeader(
+            symbol: "cpu",
+            value: engine.scanning && engine.items.isEmpty ? "-" : fmtBytes(engine.totalBytes),
+            unit: "in local AI models", subtitle: subtitle, busy: engine.scanning || engine.trashing
+        ) {
             Button {
                 engine.scan(keeping: engine.selection)
             } label: {
                 Label("Rescan", systemImage: "arrow.clockwise")
                     .font(.caption)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .buttonStyle(QuietButtonStyle())
             // A rescan mid-move would race the list the move is about to edit.
             .disabled(engine.scanning || engine.trashing)
         }
-        .padding(.horizontal, 22).padding(.vertical, 20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
-        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 10)
     }
 
     private var subtitle: String {
@@ -129,7 +91,7 @@ struct ModelView: View {
             Text(text).foregroundStyle(.secondary)
         }
         .font(.system(size: 11))
-        .padding(.horizontal, 22).padding(.vertical, 3)
+        .padding(.horizontal, 24).padding(.vertical, 3)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -147,19 +109,13 @@ struct ModelView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if engine.items.isEmpty {
-            VStack(spacing: 8) {
-                Image(systemName: "cpu").font(.system(size: 26)).foregroundStyle(.tertiary)
-                Text("No local AI models found.").foregroundStyle(.secondary)
-                Text(engine.lookedIn.isEmpty
-                     ? "None of the Ollama, Hugging Face or LM Studio folders exist in your home folder."
-                     : "Looked in " + engine.lookedIn
+            EmptyStateView(
+                symbol: "cpu", title: "No local AI models found.",
+                detail: engine.lookedIn.isEmpty
+                    ? "None of the Ollama, Hugging Face or LM Studio folders exist in your home folder."
+                    : "Looked in " + engine.lookedIn
                         .map { ($0.path as NSString).abbreviatingWithTildeInPath }
                         .joined(separator: ", ") + ".")
-                    .font(.caption).foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 440)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
                 ForEach(engine.items) { item in
@@ -177,26 +133,13 @@ struct ModelView: View {
 
     /// What the tab shows until the user starts a scan.
     private var intro: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                Circle().fill(Color.brand.opacity(0.14))
-                Image(systemName: "cpu")
-                    .font(.system(size: 30))
-                    .foregroundStyle(Color.brand.gradient)
-            }
-            .frame(width: 84, height: 84)
-
-            Text("See the AI models on your Mac")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-
-            Text("Boost looks for models downloaded by Ollama, Hugging Face and LM Studio, "
-                 + "all inside your home folder. It reads names, sizes and dates only. "
-                 + "Nothing leaves your Mac.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 440)
-
+        EmptyStateView(
+            symbol: "cpu",
+            title: "See the AI models on your Mac",
+            detail: "Boost looks for models downloaded by Ollama, Hugging Face and LM Studio, "
+                + "all inside your home folder. It reads names, sizes and dates only. "
+                + "Nothing leaves your Mac."
+        ) {
             Text("Models are downloaded, not built, so removing one means downloading it again. "
                  + "Nothing is moved until you pick models and confirm. Moved models go to the Trash.")
                 .font(.caption)
@@ -212,34 +155,33 @@ struct ModelView: View {
                     Text("Scan").fontWeight(.semibold)
                 }
                 .frame(minWidth: 120)
-                .padding(.vertical, 7)
+                .padding(.vertical, 5)
             }
-            .buttonStyle(.borderedProminent)
+            .boostProminentButton()
             .controlSize(.large)
-            .tint(Color.brand)
+            .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 22)
     }
 
     // MARK: - Footer
 
     private var footer: some View {
-        HStack(spacing: 14) {
+        FloatingBar {
             Button(!engine.items.isEmpty && engine.selection.count == engine.items.count
                    ? "Select none" : "Select all") {
                 engine.setAll(engine.selection.count != engine.items.count)
             }
-            .buttonStyle(.plain)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .boostButton()
             .disabled(engine.items.isEmpty)
 
-            Text(engine.selection.isEmpty
-                 ? "Goes to the Trash, so you can put it back."
-                 : "\(engine.selectedItems.count) selected · \(fmtBytes(engine.selectedBytes)) to download again")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+            InfoPill {
+                Text(engine.selection.isEmpty
+                     ? "Goes to the Trash, so you can put it back."
+                     : "\(engine.selectedItems.count) selected · \(fmtBytes(engine.selectedBytes)) to download again")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
 
             Spacer()
 
@@ -252,15 +194,11 @@ struct ModelView: View {
                 }
                 .frame(minWidth: 120)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
             // Teal, not red: this one can be undone.
-            .tint(Color.brand)
+            .boostProminentButton()
+            .controlSize(.large)
             .disabled(engine.selection.isEmpty || engine.trashing || engine.scanning)
         }
-        .padding(.horizontal, 22).padding(.vertical, 11)
-        .background(.regularMaterial)
-        .overlay(alignment: .top) { Divider().opacity(0.5) }
     }
 }
 
@@ -297,11 +235,7 @@ private struct ModelRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 HStack(spacing: 6) {
-                    Text(sourceLine)
-                        .font(.system(size: 10, weight: .medium))
-                        .padding(.horizontal, 6).padding(.vertical, 1)
-                        .background(Capsule().fill(Color.brand.opacity(0.14)))
-                        .foregroundStyle(Color.brand)
+                    Tag(sourceLine, Color.brand)
                     Text(((item.source == .ollama ? item.root : item.folder).path as NSString).abbreviatingWithTildeInPath)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
@@ -339,14 +273,7 @@ private struct ModelRow: View {
             .accessibilityLabel("Show \(item.name) in Finder")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(hover.on ? Color.primary.opacity(0.05) : Color.primary.opacity(0.028))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(hover.on ? Color.brand.opacity(0.35) : Color.primary.opacity(0.05), lineWidth: 1)
-        }
+        .boostRow(hovered: hover.on)
         .padding(.horizontal, 22).padding(.vertical, 4)
         .contentShape(Rectangle())
         .onHover { hover.on = $0 }
@@ -356,6 +283,5 @@ private struct ModelRow: View {
             Button(engine.selection.contains(item.id) ? "Untick" : "Tick") { engine.toggle(item) }
         }
         .help(item.url.path)
-        .animation(.spring(response: 0.22, dampingFraction: 1.0), value: hover.on)
     }
 }
