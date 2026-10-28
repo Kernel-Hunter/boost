@@ -64,8 +64,11 @@ most. A spike that passes on its own is ignored.
 
 **Disk cleanup that refuses the risky parts.** It finds caches that the tool
 that made them will rebuild: Homebrew, npm, pip, uv, Cargo, Gradle, Xcode
-DerivedData, simulator caches, app caches, logs. It will not touch Downloads,
-`node_modules` found by name, or iOS backups.
+DerivedData, simulator caches, Xcode device support files, the SwiftPM cache, app
+caches, logs. Xcode Archives are listed apart, marked as your own data, never
+ticked for you and moved to the Trash. It shows the size of Docker's disk image
+with the command to shrink it, and never deletes it. It will not touch
+Downloads, `node_modules` found by name, or iOS backups.
 
 ![Boost's disk tab, listing reclaimable caches with an explanation of what each one is and nothing ticked by default](docs/images/disk.png)
 
@@ -80,6 +83,14 @@ scans only when you press Scan, because macOS may ask permission for some of
 those folders. It lists single files only, never folders, app bundles or photo
 libraries. Nothing is ticked, and anything you remove goes to the Trash.
 
+**AI Models.** Lists the models Ollama, Hugging Face and LM Studio downloaded to
+your Mac, with sizes and when each was last used. Ollama models share files, so
+each size is what removing that one frees. Models go to the Trash, and Boost
+refuses while an Ollama download is running. It reads names, sizes and dates
+only, and scans when you press Scan.
+
+![Boost's AI Models tab: Ollama and Hugging Face models with sizes and last use, nothing ticked](docs/images/ai-models.png)
+
 **Uninstall.** Pick an app, or drop one onto the window, and Boost lists what it
 left in your Library with sizes before anything moves. Only exact matches are
 listed. Everything goes to the Trash, and there is an Undo.
@@ -92,9 +103,15 @@ the last day's peak. It lists app names and sizes only, with no file paths or
 user name, and nothing is sent anywhere.
 
 **The small things.** Start at login. A Dock badge. An optional global shortcut
-(⌥⌘B). Sort by name, memory or CPU. Reveal in Finder. Light and dark mode.
+(⌥⌘B). Sort by name, memory or CPU. Reveal in Finder. Light and dark mode. On
+macOS 26 the interface uses Liquid Glass; older versions get a plain material
+look.
 
 ![Boost's Settings window](docs/images/settings.png)
+
+New to the topic? The [guides](https://kernel-hunter.github.io/boost/guides/)
+explain memory pressure, cached memory, System Data and how to uninstall an app
+completely, with or without Boost.
 
 ## Why it is built this way
 
