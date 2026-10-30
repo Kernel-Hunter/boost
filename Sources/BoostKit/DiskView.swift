@@ -226,7 +226,7 @@ private struct DockerInfoRow: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
-            Text("up to \(fmtBytes(image.bytes))")
+            Text(fmtBytes(image.bytes))
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .frame(width: 110, alignment: .trailing)

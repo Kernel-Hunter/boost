@@ -255,7 +255,8 @@ struct DeveloperLeftoverTests {
         let f = try Fixture(); defer { f.remove() }
         try Data(repeating: 0, count: 300 * 1024).write(to: try dockerDir(f).appending(path: "Docker.raw"))
         let info = try #require(DiskScan.dockerImage(home: f.home))
-        #expect(info.bytes == 300 * 1024)
+        // On disk, so rounded up to whole blocks.
+        #expect(info.bytes >= 300 * 1024 && info.bytes < 340 * 1024)
         #expect(info.path.lastPathComponent == "Docker.raw")
     }
 
@@ -263,7 +264,8 @@ struct DeveloperLeftoverTests {
     func dockerQcow2() throws {
         let f = try Fixture(); defer { f.remove() }
         try Data(repeating: 0, count: 10 * 1024).write(to: try dockerDir(f).appending(path: "Docker.qcow2"))
-        #expect(DiskScan.dockerImage(home: f.home)?.bytes == 10 * 1024)
+        let bytes = try #require(DiskScan.dockerImage(home: f.home)).bytes
+        #expect(bytes >= 10 * 1024 && bytes < 20 * 1024)
     }
 
     /// The folder holds only a file this code never names. A reader that listed

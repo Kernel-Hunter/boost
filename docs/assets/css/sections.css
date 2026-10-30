@@ -270,7 +270,7 @@ section[id] { scroll-margin-top: 54px; }
 
 .shot-stage {
   position: relative;
-  aspect-ratio: 2080 / 1520;
+  aspect-ratio: 1920 / 1302;
   background: #0b0f0e;
   overflow: hidden;
 }

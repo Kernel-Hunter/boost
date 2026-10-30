@@ -321,8 +321,7 @@ public enum DiskScan {
     /// make macOS ask for permission. A plain `attributesOfItem` on a single
     /// path is the whole read, and any failure means "do not show it".
     ///
-    /// The image is a sparse file, so this is the size it may grow to, not
-    /// necessarily what it takes on disk right now.
+    /// The size is what the file takes on disk now, not its sparse length.
     public static func dockerImage(home overrideHome: URL? = nil) -> DockerImage? {
         let h = overrideHome ?? home
         let base = "Library/Containers/com.docker.docker/Data"
@@ -337,7 +336,13 @@ public enum DiskScan {
             guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
                   attrs[.type] as? FileAttributeType == .typeRegular,
                   let size = (attrs[.size] as? NSNumber)?.uint64Value, size > 0 else { continue }
-            return DockerImage(path: url, bytes: size)
+            // The image is sparse: its length is the most it may grow to, often
+            // hundreds of times what it takes on disk. The allocated size is the
+            // space Docker is using now, which is the number worth showing.
+            let values = try? url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey])
+            let used = UInt64(values?.totalFileAllocatedSize ?? values?.fileAllocatedSize ?? 0)
+            guard used > 0 else { continue }
+            return DockerImage(path: url, bytes: used)
         }
         return nil
     }
