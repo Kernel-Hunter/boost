@@ -7,12 +7,10 @@
 **A free, open source Mac app for memory and disk space.**<br>
 It lives in your menu bar, shows what is really using your RAM, pauses apps you are not using, and finds what is safe to remove.
 
-[![Release](https://img.shields.io/github/v/release/Kernel-Hunter/boost?style=flat-square&color=159e86)](https://github.com/Kernel-Hunter/boost/releases/latest)
-[![Stars](https://img.shields.io/github/stars/Kernel-Hunter/boost?style=flat-square&color=159e86)](https://github.com/Kernel-Hunter/boost/stargazers)
-[![CI](https://img.shields.io/github/actions/workflow/status/Kernel-Hunter/boost/ci.yml?style=flat-square&label=build)](https://github.com/Kernel-Hunter/boost/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-GPL--3.0-159e86?style=flat-square)](LICENSE)
-![macOS 14+](https://img.shields.io/badge/macOS-14%2B-159e86?style=flat-square)
-![Apple Silicon and Intel](https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-159e86?style=flat-square)
+[![Release](https://img.shields.io/github/v/release/Kernel-Hunter/boost?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117&color=159e86)](https://github.com/Kernel-Hunter/boost/releases/latest)
+[![Stars](https://img.shields.io/github/stars/Kernel-Hunter/boost?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117&color=159e86)](https://github.com/Kernel-Hunter/boost/stargazers)
+[![License](https://img.shields.io/badge/license-GPL--3.0-159e86?style=for-the-badge&logo=gnu&logoColor=white&labelColor=0d1117)](LICENSE)
+[![macOS](https://img.shields.io/badge/macOS-14%2B_%C2%B7_Apple_Silicon_%26_Intel-159e86?style=for-the-badge&logo=apple&logoColor=white&labelColor=0d1117)](https://github.com/Kernel-Hunter/boost/releases/latest)
 
 [Website](https://kernel-hunter.github.io/boost/) &nbsp;·&nbsp;
 [Download](https://github.com/Kernel-Hunter/boost/releases/latest) &nbsp;·&nbsp;
