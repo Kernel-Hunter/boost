@@ -4,180 +4,697 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Boost for Mac: a free, open source memory and disk utility</title>
-<meta name="description" content="Boost is a free, open source menu bar app for macOS. A free alternative to CleanMyMac and iStat Menus for memory: see what is using your RAM, keep a week of history, pause idle apps, find large files and uninstall apps cleanly.">
+<meta name="description" content="Boost is a free, open source Mac menu bar app: see what your RAM is really doing, pause apps instead of quitting them, and clean caches, old project folders, large files, AI models and leftovers. A free alternative to CleanMyMac and iStat Menus. No subscription, no telemetry, no network access.">
 <link rel="canonical" href="https://kernel-hunter.github.io/boost/">
-<meta property="og:url" content="https://kernel-hunter.github.io/boost/">
+<meta name="theme-color" content="#080c0b">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Boost",
-  "alternateName": "Boost for Mac",
-  "applicationCategory": "UtilitiesApplication",
-  "operatingSystem": "macOS 14 or later",
-  "description": "A free, open source menu bar app for macOS that shows what is using your memory, keeps a week of history, pauses idle apps, finds large files and uninstalls apps cleanly.",
-  "url": "https://kernel-hunter.github.io/boost/",
-  "downloadUrl": "https://github.com/Kernel-Hunter/boost/releases/latest",
-  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
-  "isAccessibleForFree": true,
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "author": { "@type": "Person", "name": "Karim Masmoudi", "url": "https://github.com/Kernel-Hunter" },
-  "codeRepository": "https://github.com/Kernel-Hunter/boost"
-}
-</script>
-<meta property="og:title" content="Boost, a free Mac memory and disk app">
-<meta property="og:description" content="A free, open source menu bar app for macOS. Memory history, pause apps, safe disk cleanup, and an uninstaller.">
-<meta property="og:image" content="https://kernel-hunter.github.io/boost/images/social-preview.png">
-<meta property="og:image:width" content="1280">
-<meta property="og:image:height" content="640">
 <meta property="og:url" content="https://kernel-hunter.github.io/boost/">
+<meta property="og:title" content="Boost for Mac: your Mac isn't full. It's working.">
+<meta property="og:description" content="A free, open source Mac menu bar app for memory and disk. It tells you when there is nothing to do.">
+<meta property="og:image" content="https://kernel-hunter.github.io/boost/assets/img/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#101514">
-<style>
-:root {
-  --bg: #fbfcfc; --fg: #14201d; --muted: #5b6b66; --card: #ffffff; --line: #e1e8e6;
-  --brand: #159e86; --brand-fg: #ffffff; --code: #eef3f2;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #101514; --fg: #e8f0ee; --muted: #93a6a1; --card: #171e1c; --line: #26302e;
-    --brand: #3fd1b0; --brand-fg: #08130f; --code: #1c2523;
-  }
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0; background: var(--bg); color: var(--fg);
-  font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-}
-a { color: var(--brand); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
-nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
-nav .name { font-weight: 700; font-size: 20px; }
-nav a.gh { color: var(--fg); text-decoration: none; font-size: 15px; border: 1px solid var(--line);
-  padding: 7px 14px; border-radius: 999px; }
-.navlinks { display: flex; align-items: center; gap: 18px; }
-.navlinks a.guides { color: var(--fg); text-decoration: none; font-size: 15px; }
-.hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 48px 0 72px; }
-h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1.08; margin: 0 0 18px; letter-spacing: -0.02em; }
-.lead { font-size: 20px; color: var(--muted); margin: 0 0 28px; }
-.install {
-  display: flex; align-items: center; gap: 10px; background: var(--code); border: 1px solid var(--line);
-  border-radius: 12px; padding: 12px 14px; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace;
-  overflow-x: auto; white-space: nowrap;
-}
-.install button {
-  margin-left: auto; font-family: -apple-system, sans-serif; font-size: 13px;
-  background: var(--brand); color: var(--brand-fg); border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer;
-}
-.sub { margin-top: 12px; font-size: 14px; color: var(--muted); }
-.shot { display: flex; justify-content: center; }
-.shot img { width: min(340px, 100%); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.28); }
-section { padding: 56px 0; border-top: 1px solid var(--line); }
-h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -0.01em; }
-.sec-lead { color: var(--muted); margin: 0 0 32px; max-width: 640px; }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-.card h3 { margin: 0 0 6px; font-size: 17px; }
-.card p { margin: 0; color: var(--muted); font-size: 15px; }
-.big { width: 100%; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.2); }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
-.two img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
-table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card);
-  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--muted); font-weight: 600; }
-tr:last-child td { border-bottom: 0; }
-.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand);
-  border-radius: 10px; padding: 16px 18px; color: var(--muted); font-size: 15px; }
-footer { padding: 36px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
-@media (max-width: 800px) {
-  .hero { grid-template-columns: 1fr; padding-top: 24px; }
-  .grid, .two { grid-template-columns: 1fr; }
-  .shot { order: -1; }
-}
-</style>
+<meta name="twitter:title" content="Boost for Mac: your Mac isn't full. It's working.">
+<meta name="twitter:description" content="A free, open source Mac menu bar app for memory and disk. No subscription, no telemetry, no network access.">
+<meta name="twitter:image" content="https://kernel-hunter.github.io/boost/assets/img/social-preview.png">
+<link rel="icon" href="assets/img/icon.png">
+<link rel="apple-touch-icon" href="assets/img/icon.png">
+<link rel="preload" href="assets/fonts/archivo-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/azeret-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/sections.css">
+<link rel="stylesheet" href="assets/css/sections2.css">
+<script>document.documentElement.classList.add('js');</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Boost","alternateName":"Boost for Mac","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 14 or later","description":"A free, open source menu bar app for macOS that shows what is using your memory, keeps a week of history, pauses idle apps, finds large files and AI models, and uninstalls apps cleanly.","url":"https://kernel-hunter.github.io/boost/","downloadUrl":"https://github.com/Kernel-Hunter/boost/releases/latest","license":"https://www.gnu.org/licenses/gpl-3.0.html","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Karim Masmoudi","url":"https://github.com/Kernel-Hunter"},"codeRepository":"https://github.com/Kernel-Hunter/boost"}
+</script>
+<script src="assets/js/site.js" defer></script>
 </head>
 <body>
-<div class="wrap">
-  <nav>
-    <div class="name">Boost</div>
-    <div class="navlinks">
-      <a class="guides" href="guides/index.html">Guides</a>
-      <a class="gh" href="https://github.com/Kernel-Hunter/boost">View on GitHub</a>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.4 2 4.6 13.5h5.6L9.6 22l9.1-11.9h-5.8L13.4 2Z" fill="currentColor"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3H6a2 2 0 0 0-2 2v6.5A2.5 2.5 0 0 0 6.5 14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 17 17 7M8 7h9v9"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7Z"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v6h6"/><path d="M4.6 13a8 8 0 1 0 2-7"/></symbol>
+</svg>
+
+<header class="menubar" id="top">
+  <div class="wrap menubar-inner">
+    <a class="brand" href="#top" aria-label="Boost, back to top">
+      <span class="brand-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>
+      Boost
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#number">The number</a>
+      <a href="#app">The app</a>
+      <a href="#pause">Pause</a>
+      <a href="#disk">Disk</a>
+      <a href="#history">History</a>
+      <a href="#install">Install</a>
+    </nav>
+    <div class="menubar-meta">
+      <span class="net"><i aria-hidden="true"></i>No network</span>
+      <a class="pill" href="#install">Install</a>
     </div>
-  </nav>
+  </div>
+</header>
 
-  <header class="hero">
-    <div>
-      <h1>See what is eating your Mac's memory, and do something about it.</h1>
-      <p class="lead">Boost is a free, open source menu bar app. It shows memory pressure and history, pauses apps you are not using, and cleans up caches and leftovers without touching anything risky.</p>
-      <div class="install"><code id="cmd">brew install --cask kernel-hunter/boost/boost</code><button id="copy">Copy</button></div>
-      <p class="sub">macOS 14 or later. Apple Silicon and Intel. No account, no network access, no subscription.</p>
+<div class="grain" aria-hidden="true"></div>
+
+<main id="main">
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div class="hero-meta mono">
+      <span>Free &amp; open source</span>
+      <span>macOS 14+ · Universal</span>
+      <span>No network access</span>
     </div>
-    <div class="shot"><img src="images/popover.png" alt="Boost's menu bar popover showing memory pressure, a graph, and the apps using the most memory"></div>
-  </header>
 
-  <section>
-    <h2>What it does</h2>
-    <p class="sec-lead">The parts of the paid Mac utilities that most people use, in one small app.</p>
-    <div class="grid">
-      <div class="card"><h3>Menu bar popover</h3><p>Pressure, swap, cached and compressed memory, and your five biggest apps. Pause or quit one without opening a window.</p></div>
-      <div class="card"><h3>Memory history</h3><p>A reading every minute, kept for a week. Chart it over 2 hours, 24 hours or 7 days and see when your Mac started swapping.</p></div>
-      <div class="card"><h3>Pause, don't quit</h3><p>Freeze an app and its helpers. It uses no CPU and returns exactly where you left it. Choose apps to pause on their own when idle.</p></div>
-      <div class="card"><h3>Useful alerts</h3><p>A notice when swap passes 1, 2 or 4 GB, or when memory stays tight for a minute, with the app responsible.</p></div>
-      <div class="card"><h3>Safe disk cleanup</h3><p>Rebuildable caches only. Downloads, iOS backups and anything behind a privacy prompt are left alone. Nothing is ticked for you.</p></div>
-      <div class="card"><h3>Projects, Large Files, AI Models and Uninstall</h3><p>Find old node_modules and build folders, spot the biggest files you forgot about, see which Ollama and Hugging Face models take your disk, and remove an app along with the files it left in your Library. All of it goes to the Trash.</p></div>
+    <h1 id="hero-title">
+      <span class="line" style="--d:.08s"><span>Your Mac isn't full.</span></span>
+      <span class="line l2" style="--d:.18s"><span>It's working.</span></span>
+    </h1>
+
+    <div class="hero-bottom">
+      <div class="hero-copy">
+        <p class="lede">Boost is a menu bar app that shows what your memory is <strong>actually</strong> doing, then gives back only what is genuinely idle. No fake numbers. No subscription. No network access.</p>
+        <div class="hero-actions">
+          <button class="cmd" type="button" data-copy="brew install --cask kernel-hunter/boost/boost" aria-label="Copy Homebrew install command">
+            <span class="dollar" aria-hidden="true">$</span>
+            <code>brew install --cask kernel-hunter/boost/boost</code>
+            <span class="copy" aria-hidden="true"><svg class="ico"><use href="#i-copy"/></svg></span>
+          </button>
+          <a class="text-link" href="https://github.com/Kernel-Hunter/boost" target="_blank" rel="noopener">Read the source <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+        <p class="micro">GPL-3.0 · Apple Silicon + Intel · free</p>
+
+        <div class="key">
+          <p class="mono">What the readout means</p>
+          <dl>
+            <div class="key-row" style="--k:var(--mint)"><i aria-hidden="true"></i><dt>Plenty of headroom</dt><dd>no swap, under 75%</dd></div>
+            <div class="key-row" style="--k:var(--amber)"><i aria-hidden="true"></i><dt>Getting busy</dt><dd>any swap, or over 75%</dd></div>
+            <div class="key-row" style="--k:#e2684f"><i aria-hidden="true"></i><dt>Under pressure</dt><dd>over 1 GB swap, or over 90%</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <figure class="hero-visual" aria-label="Interactive replica of the Boost menu bar popover">
+        <div class="fig"><span>Fig. 01 · Menu bar popover</span><span>Live demo</span></div>
+        <div class="shell">
+          <i class="corner tl" aria-hidden="true"></i><i class="corner tr" aria-hidden="true"></i>
+          <i class="corner bl" aria-hidden="true"></i><i class="corner br" aria-hidden="true"></i>
+
+          <div class="pop" id="pop" aria-label="Boost popover demo">
+            <div class="pop-head">
+              <div class="pop-app"><span class="brand-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>Boost</div>
+              <span class="pop-live"><i aria-hidden="true"></i>Live</span>
+            </div>
+
+            <div class="pop-readout">
+              <div class="gauge-wrap">
+                <svg class="gauge" viewBox="0 0 100 100" role="img" id="gauge" aria-label="Memory pressure: 69 percent">
+                  <circle class="g-track" cx="50" cy="50" r="42"/>
+                  <circle class="g-val" cx="50" cy="50" r="42" id="gaugeVal" pathLength="100"/>
+                </svg>
+                <div class="gauge-mid" aria-hidden="true"><b id="gaugePct">69</b><span>%</span></div>
+              </div>
+              <div class="pop-main">
+                <div class="pop-big"><b id="usedGb">11.11</b><span>GB</span></div>
+                <div class="pop-sub">of 16.00 GB</div>
+                <div class="pop-status" id="popStatus"><i aria-hidden="true"></i><span>Getting busy</span></div>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <div><span>Cached</span><b id="cachedGb">3.75 GB</b></div>
+              <div><span>Compressed</span><b>4.38 GB</b></div>
+              <div class="warn"><span>Swap</span><b>820 MB</b></div>
+            </div>
+
+            <p class="pop-label">Using the most memory</p>
+            <ul class="app-list">
+              <li><span class="badge xcode" aria-hidden="true">X</span><b>Xcode</b><span class="val">3.41 GB</span></li>
+              <li><span class="badge safari" aria-hidden="true">S</span><b>Safari</b><span class="val">1.24 GB</span></li>
+              <li><span class="badge figma" aria-hidden="true">F</span><b>Figma</b><span class="val">1.08 GB</span></li>
+              <li><span class="badge terminal" aria-hidden="true">T</span><b>Terminal</b><span class="val">186 MB</span></li>
+            </ul>
+
+            <button class="free-btn" type="button" id="freeBtn"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg><span>Free Memory</span></button>
+            <p class="pop-result" id="popResult" aria-live="polite">No app closing. No admin password.</p>
+
+            <div class="pop-foot"><span>Open Boost</span><span>Settings &nbsp; Quit</span></div>
+          </div>
+        </div>
+        <figcaption class="fig bottom"><span>Try Free Memory</span><span>Readings illustrative</span></figcaption>
+      </figure>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section>
-    <h2>Real screens, real data</h2>
-    <p class="sec-lead">These are the actual views, rendered from the app.</p>
-    <img class="big" src="images/memory.png" alt="Boost's memory tab with a pressure gauge, history chart and grouped app list">
-    <div class="two">
-      <img src="images/disk.png" alt="Boost's disk tab listing reclaimable caches">
-      <img src="images/uninstall.png" alt="Boost's uninstall tab listing installed apps">
-    </div>
-  </section>
-
-  <section>
-    <h2>Honest about memory</h2>
-    <p class="sec-lead">Most cleaners make a big number smaller. Boost explains what the number means first.</p>
-    <table>
-      <tr><th>Typical cleaner</th><th>Boost</th></tr>
-      <tr><td>Shows cached memory as a problem</td><td>Shows it as available, because macOS gives it back on demand</td></tr>
-      <tr><td>Always has something to clean</td><td>Tells you when there is nothing to do</td></tr>
-      <tr><td>Ticks everything for you</td><td>Ticks nothing</td></tr>
-      <tr><td>Deletes permanently</td><td>Moves to the Trash, except the Disk tab, which says so</td></tr>
-      <tr><td>Wants an account and a subscription</td><td>Free, GPL-3.0, no network access at all</td></tr>
-    </table>
-  </section>
-
-  <section>
-    <h2>Install</h2>
-    <p class="sec-lead">Homebrew is the easiest way. You can also build it from source, which takes about a minute.</p>
-    <div class="install"><code>git clone https://github.com/Kernel-Hunter/boost.git &amp;&amp; cd boost &amp;&amp; ./Scripts/build.sh</code></div>
-    <p class="note" style="margin-top:20px"><strong>About signing.</strong> Boost is signed with a local certificate and is not notarized, because that needs a paid Apple Developer account. The Homebrew cask and a source build both avoid the Gatekeeper warning. If you download the zip by hand, right-click the app and choose Open on macOS 14. On macOS 15 and later, open it once, then click Open Anyway in System Settings, Privacy &amp; Security.</p>
-  </section>
-
-  <footer>
-    Boost is GPL-3.0 and built by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>.
-    <a href="https://github.com/Kernel-Hunter/boost">Source</a> &middot;
-    <a href="https://github.com/Kernel-Hunter/boost/releases">Releases</a> &middot;
-    <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md">Security</a> &middot;
-    <a href="guides/index.html">Guides</a>
-  </footer>
+<div class="rail" aria-label="Product facts">
+  <div class="wrap rail-inner">
+    <div class="rail-item"><b>0</b><span>Network requests</span></div>
+    <div class="rail-item"><b>0</b><span>Accounts</span></div>
+    <div class="rail-item"><b>0</b><span>Subscriptions</span></div>
+    <div class="rail-item"><b>7</b><span>Days of history</span></div>
+    <div class="rail-item"><b>1</b><span>Universal binary</span></div>
+  </div>
 </div>
-<script>
-document.getElementById('copy').addEventListener('click', function () {
-  var b = this;
-  navigator.clipboard.writeText(document.getElementById('cmd').textContent).then(function () {
-    b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500);
-  });
-});
-</script>
+
+<section class="sec" id="number" aria-labelledby="number-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>01</b><span>The number</span></div>
+      <div class="sec-title">
+        <h2 id="number-title">The number other cleaners sell you is usually cache.</h2>
+        <p class="lede">macOS fills spare RAM with cache on purpose. It is the fastest thing your Mac can do with memory it isn't using, and it yields the moment an app asks for it. Counting it as “used” makes the problem look bigger than it is.</p>
+      </div>
+    </header>
+
+    <div class="anatomy reveal">
+      <div class="anatomy-top">
+        <span>Physical memory <b>16.00 GB</b></span>
+        <span>Live readout <b>11.11 GB in use</b></span>
+      </div>
+
+      <div class="bar-wrap">
+        <div class="bracket" aria-hidden="true"><span>Available on demand</span></div>
+        <div class="bar" role="img" aria-label="Memory split: 3.20 GB wired, 3.53 GB apps, 4.38 GB compressed, 3.75 GB cached, 1.14 GB free">
+          <div class="seg wired" style="width:20%"><span>3.20 GB</span></div>
+          <div class="seg apps" style="width:22.06%"><span>3.53 GB</span></div>
+          <div class="seg compressed" style="width:27.38%"><span>4.38 GB</span></div>
+          <div class="seg cached" style="width:23.44%"><span>3.75 GB cached</span></div>
+          <div class="seg free" style="width:7.12%"></div>
+        </div>
+        <div class="axis" aria-hidden="true"><span>0</span><span>4 GB</span><span>8 GB</span><span>12 GB</span><span>16 GB</span></div>
+      </div>
+
+      <div class="legend" role="group" aria-label="Memory types">
+        <button type="button" data-key="wired" aria-pressed="false"><span class="swatch" style="--sw:#343f3b"></span><span class="name">Wired</span><span class="val">3.20 GB</span></button>
+        <button type="button" data-key="apps" aria-pressed="false"><span class="swatch" style="--sw:#55665f"></span><span class="name">Apps</span><span class="val">3.53 GB</span></button>
+        <button type="button" data-key="compressed" aria-pressed="false"><span class="swatch" style="--sw:#7f948b"></span><span class="name">Compressed</span><span class="val">4.38 GB</span></button>
+        <button type="button" data-key="cached" aria-pressed="true"><span class="swatch" style="--sw:var(--mint)"></span><span class="name">Cached</span><span class="val">3.75 GB</span></button>
+        <button type="button" data-key="free" aria-pressed="false"><span class="swatch" style="--sw:#3f4a46"></span><span class="name">Free</span><span class="val">1.14 GB</span></button>
+      </div>
+
+      <p class="anatomy-detail" id="anatomyDetail" aria-live="polite"><b>Cached memory is available memory.</b> Files kept in RAM because nothing else needed it. The instant an app asks, macOS hands it over. A big cache is a Mac using spare memory well, not a Mac that is full.</p>
+
+      <div class="compare">
+        <div class="compare-card bad">
+          <p class="mono">How a cleaner reads it</p>
+          <div class="compare-num">14.86 GB <span>used</span></div>
+          <div class="compare-bar"><i style="width:93%"></i></div>
+          <p>Big warning number. “Clean 3.75 GB.” It would shrink memory macOS is using well, and leave the Mac slower.</p>
+        </div>
+        <div class="compare-card good">
+          <p class="mono">What is actually true</p>
+          <div class="compare-num">11.11 GB <span>genuinely spoken for</span></div>
+          <div class="compare-bar"><i style="width:69.44%;background:#93a69d"></i><i class="cache" style="width:23.44%"></i></div>
+          <p>3.75 GB of that is cache, handed back the instant an app asks. <b>4.89 GB available</b> without closing anything.</p>
+        </div>
+      </div>
+
+      <blockquote class="truth-quote"><span>A high cache is a <em>healthy</em> Mac. Not a full one.</span></blockquote>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="app" aria-labelledby="app-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>02</b><span>The actual app</span></div>
+      <div class="sec-title">
+        <h2 id="app-title">This is the whole app.</h2>
+        <p class="lede">One window, no dashboard theatre. Every app and its helpers become a single row with a real total, not thirty mystery processes. The popover above is the short version.</p>
+      </div>
+    </header>
+
+    <div class="shots reveal">
+      <div class="shots-bar">
+        <i class="tl r" aria-hidden="true"></i><i class="tl y" aria-hidden="true"></i><i class="tl g" aria-hidden="true"></i>
+        <span class="shots-title">Boost · Memory</span>
+        <div class="shots-tabs" role="tablist" aria-label="App screenshots">
+          <button type="button" role="tab" aria-selected="true" data-shot="memory">Memory</button>
+          <button type="button" role="tab" aria-selected="false" data-shot="disk">Disk</button>
+          <button type="button" role="tab" aria-selected="false" data-shot="uninstall">Uninstall</button>
+          <button type="button" role="tab" aria-selected="false" data-shot="models">AI Models</button>
+        </div>
+      </div>
+      <div class="shot-stage">
+        <img class="shot on" src="assets/img/memory.png" alt="Boost's Memory tab: a pressure gauge, a history chart, and running apps grouped with their helper processes." width="2080" height="1520">
+        <img class="shot" src="assets/img/disk.png" alt="Boost's Disk tab, listing reclaimable caches with an explanation of each one and nothing ticked by default." width="2080" height="1520" loading="lazy" aria-hidden="true">
+        <img class="shot" src="assets/img/uninstall.png" alt="Boost's Uninstall tab: a searchable list of installed apps with sizes and when each was last used." width="2080" height="1520" loading="lazy" aria-hidden="true">
+        <img class="shot" src="assets/img/ai-models.png" alt="Boost's AI Models tab: Ollama and Hugging Face models with sizes and when each was last used, nothing ticked." width="1920" height="1302" loading="lazy" aria-hidden="true">
+        <div class="markers" id="shotMarkers" aria-hidden="true">
+          <span class="marker" style="left:21.4%;top:10.6%">1</span>
+          <span class="marker" style="left:40.5%;top:14.6%">2</span>
+          <span class="marker" style="left:35.1%;top:52%">3</span>
+          <span class="marker" style="left:79.3%;top:6.9%">4</span>
+        </div>
+      </div>
+      <div class="shot-foot">
+        <span class="cap" id="shotCap">Every app and its helpers, grouped into one row with a real total.</span>
+        <span>Screenshot of the real app</span>
+      </div>
+    </div>
+
+    <ul class="shot-legend reveal">
+      <li><b>1</b><span>Pressure, not a percentage you have to interpret.</span></li>
+      <li><b>2</b><span>Cached memory, counted as available because it is.</span></li>
+      <li><b>3</b><span>One app, every helper. The number is real.</span></li>
+      <li><b>4</b><span>One action. It watches swap and stops early.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec" id="pause" aria-labelledby="pause-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>03</b><span>Pause</span></div>
+      <div class="sec-title">
+        <h2 id="pause-title">Pause is not quit.</h2>
+        <p class="lede">Quitting throws away where you were. Pause freezes the app and every helper: no CPU, no state lost, and macOS is free to move its pages to disk. Switch back and it resumes exactly where it was.</p>
+      </div>
+    </header>
+
+    <div class="pause-grid">
+      <div class="reveal">
+        <dl class="specs">
+          <div class="spec-row"><dt>Mechanism</dt><dd><b>SIGSTOP, not a kill.</b> The app and its helpers freeze as one.</dd></div>
+          <div class="spec-row"><dt>While paused</dt><dd><b>0.0% CPU.</b> State stays in memory; the pages become eligible to swap.</dd></div>
+          <div class="spec-row"><dt>Watchdog</dt><dd>If Boost crashes or is killed, <b>everything it froze is resumed.</b> Nothing stays stuck.</dd></div>
+          <div class="spec-row"><dt>Automatic</dt><dd>Optional: pause apps after <b>5 to 60 minutes</b> in the background. Wakes the moment you switch to them.</dd></div>
+        </dl>
+      </div>
+
+      <div class="reveal" style="--d:90ms">
+        <div class="freeze" id="freeze">
+          <div class="win">
+            <div class="win-bar">
+              <i class="tl r" aria-hidden="true"></i><i class="tl y" aria-hidden="true"></i><i class="tl g" aria-hidden="true"></i>
+              <span>Figma · Untitled</span>
+            </div>
+            <div class="win-body">
+              <div class="win-side" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="win-canvas" aria-hidden="true">
+                <span class="block a"></span>
+                <span class="block b"></span>
+                <span class="block c"></span>
+                <span class="block d"></span>
+                <span class="sel"><i></i><i></i><i></i><i></i></span>
+                <div class="pause-cover">
+                  <span class="tag"><i></i>Paused</span>
+                  <b>State kept. Nothing quit.</b>
+                  <span class="small">0.0% CPU · pages eligible to swap</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="freeze-controls">
+            <span class="badge" aria-hidden="true">F</span>
+            <div class="freeze-meta"><b>Figma</b><span id="freezeMeta">4 windows · 1.2 GB · 6.4% CPU</span></div>
+            <svg class="spark" viewBox="0 0 72 26" aria-hidden="true">
+              <polyline class="live" points="0,18 6,14 12,16 18,9 24,12 30,6 36,11 42,5 48,9 54,7 60,12 66,8 72,10"/>
+              <polyline class="flat" points="0,13 72,13"/>
+            </svg>
+            <button class="ghost-btn" type="button" id="pauseBtn" aria-pressed="false">Pause</button>
+          </div>
+          <p class="freeze-note" id="freezeNote">Pause freezes the app and its helpers. Resume puts everything back where it was.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec paper" id="disk" aria-labelledby="disk-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>04</b><span>Disk</span></div>
+      <div class="sec-title">
+        <h2 id="disk-title">Clean only what can prove it's disposable.</h2>
+        <p class="lede">Boost scans a short allowlist. A folder is listed only when the manifest next to it proves what it is, and <strong>nothing is ticked for you.</strong> Removing files should be a decision, not a default.</p>
+      </div>
+    </header>
+
+    <div class="disk-grid">
+      <div class="manifest reveal">
+        <div class="manifest-head">
+          <span class="mono">Scan result</span>
+          <span class="stamp">Nothing pre-ticked</span>
+          <div class="manifest-total">
+            <b id="diskSelected">0 B</b>
+            <span id="diskTotalLabel">selected of 11.49 GB</span>
+          </div>
+        </div>
+
+        <div class="rows">
+          <label class="disk-row">
+            <input type="checkbox" data-size="1884">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Homebrew cache</b><small>~/Library/Caches/Homebrew</small></span>
+            <span class="disk-size">1.84 GB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="912">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>npm cache</b><small>~/.npm/_cacache</small></span>
+            <span class="disk-size">912 MB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="3287">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Xcode DerivedData</b><small>~/Library/Developer/Xcode/DerivedData</small></span>
+            <span class="disk-size">3.21 GB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="2120">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Xcode device support</b><small>~/Library/Developer/Xcode/iOS DeviceSupport</small></span>
+            <span class="disk-size">2.07 GB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="1495">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Simulator caches</b><small>~/Library/Developer/CoreSimulator/Caches</small></span>
+            <span class="disk-size">1.46 GB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="604">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Gradle caches</b><small>~/.gradle/caches</small></span>
+            <span class="disk-size">604 MB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="248">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>pip + uv caches</b><small>~/Library/Caches/pip · ~/.cache/uv</small></span>
+            <span class="disk-size">248 MB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="181">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Cargo registry</b><small>~/.cargo/registry</small></span>
+            <span class="disk-size">181 MB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="706">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>App caches</b><small>~/Library/Caches</small></span>
+            <span class="disk-size">706 MB</span>
+          </label>
+          <label class="disk-row">
+            <input type="checkbox" data-size="324">
+            <span class="box" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
+            <span class="disk-main"><b>Logs</b><small>~/Library/Logs</small></span>
+            <span class="disk-size">324 MB</span>
+          </label>
+        </div>
+
+        <div class="manifest-foot">
+          <span>Selection demo only. This page deletes nothing.</span>
+          <span>Caches are deleted · everything else goes to the Trash</span>
+        </div>
+      </div>
+
+      <div class="reveal" style="--d:90ms">
+        <div class="never">
+          <p class="mono">Never scanned</p>
+          <h3>If it can't be proven safe, it isn't listed.</h3>
+          <ul>
+            <li>Downloads</li>
+            <li>Any <b>node_modules</b></li>
+            <li>iOS device backups</li>
+            <li>Music, Photos, Safari caches</li>
+            <li>Xcode Archives, unless you tick them yourself</li>
+            <li>Anything behind a privacy prompt</li>
+          </ul>
+          <p class="fine">If proving it is safe would need a permission prompt, Boost skips it instead of asking.</p>
+        </div>
+
+        <div class="safety">
+          <p class="mono">The second check</p>
+          <h3>Two gates before anything is deleted.</h3>
+          <p>First, the path must be on the allowlist. Then Boost resolves the <strong>real</strong> path and checks it again immediately before removal.</p>
+          <p>A symlink sitting in a cache and pointing at your Documents is how tools like this destroy data. There is a test that builds exactly that trap.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="disk-note reveal">
+      <span><b>Caches are deleted, and the tab says so.</b> Projects, Large Files, AI Models, Uninstall and Xcode Archives move to the Trash.</span>
+      <span>Allowlist + resolved-path check · symlink trap test in the suite · Docker's disk image is shown, never deleted</span>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="history" aria-labelledby="history-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>05</b><span>History</span></div>
+      <div class="sec-title">
+        <h2 id="history-title">A week of evidence.</h2>
+        <p class="lede">One reading a minute, kept for seven days. Peak, average, and how often your Mac went into swap, so “was it slow at 3pm yesterday” has an answer instead of a guess.</p>
+      </div>
+    </header>
+
+    <div class="hist-grid">
+      <div class="hist-side reveal">
+        <p class="mono">Reading every minute</p>
+        <div class="range" role="tablist" aria-label="History range">
+          <button type="button" role="tab" aria-selected="false" data-range="2h">2h</button>
+          <button type="button" role="tab" aria-selected="false" data-range="24h">24h</button>
+          <button type="button" role="tab" aria-selected="true" data-range="7d">7d</button>
+        </div>
+        <div class="hist-stats">
+          <div class="hist-stat"><span>Peak</span><b id="statPeak">92%</b></div>
+          <div class="hist-stat"><span>Average</span><b id="statAvg">62%</b></div>
+          <div class="hist-stat warn"><span>Swap events</span><b id="statSwap">4</b></div>
+        </div>
+        <p class="fine">Recorded on your Mac and nowhere else. <b>Alerts ignore spikes that pass on their own.</b></p>
+      </div>
+
+      <div class="chart-panel reveal" style="--d:90ms">
+        <div class="chart-head">
+          <span class="mono">Memory pressure · <span id="chartRange">7 days</span></span>
+          <span class="mono live"><i aria-hidden="true"></i>Recorded locally</span>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-plot" id="chartPlot">
+            <svg class="chart-svg" id="chart" viewBox="0 0 1000 320" role="img" aria-labelledby="chartTitle chartDesc">
+              <title id="chartTitle">Memory pressure over the last 7 days</title>
+              <desc id="chartDesc">Pressure peaks at 92 percent on Tuesday evening, averages 62 percent, and triggers four swap events.</desc>
+              <defs>
+                <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#5fe3b4" stop-opacity=".22"/>
+                  <stop offset="1" stop-color="#5fe3b4" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <g class="y-labels" aria-hidden="true">
+                <text x="0" y="22">100</text>
+                <text x="0" y="91">75</text>
+                <text x="0" y="159">50</text>
+                <text x="0" y="228">25</text>
+                <text x="0" y="297">0</text>
+              </g>
+              <g class="grid" aria-hidden="true">
+                <line class="gridline" x1="40" y1="16" x2="1000" y2="16"/>
+                <line class="gridline" x1="40" y1="84.5" x2="1000" y2="84.5"/>
+                <line class="gridline" x1="40" y1="153" x2="1000" y2="153"/>
+                <line class="gridline" x1="40" y1="221.5" x2="1000" y2="221.5"/>
+                <line class="gridline" x1="40" y1="290" x2="1000" y2="290"/>
+              </g>
+              <path class="chart-area" id="chartArea" d=""/>
+              <path class="chart-line" id="chartLine" d=""/>
+              <circle class="chart-dot" id="chartDot" cx="0" cy="0" r="4.5"/>
+            </svg>
+            <div class="chart-annot" id="chartAnnot">Tue 18:00 · <b>92%</b></div>
+            <div class="chart-tip" id="chartTip"></div>
+          </div>
+          <div class="chart-x" id="chartX" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alerts reveal">
+      <div class="alert">
+        <p class="mono">Swap &gt; 1 / 2 / 4 GB</p>
+        <h3>You pick the line.</h3>
+        <p>It tells you when swap crosses the threshold you chose, not every time the number moves.</p>
+      </div>
+      <div class="alert">
+        <p class="mono">One full minute</p>
+        <h3>Pressure has to last.</h3>
+        <p>A spike that passes on its own is ignored. A minute of tight memory gets a notification naming the app using the most.</p>
+      </div>
+      <div class="alert">
+        <p class="mono">Pause, never close</p>
+        <h3>The alert can't quit anything.</h3>
+        <p>It can pause apps you ticked. It cannot close them. There is a test for that, because it matters.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="more" aria-labelledby="more-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>06</b><span>Everything else</span></div>
+      <div class="sec-title">
+        <h2 id="more-title">The rest of the utility.</h2>
+        <p class="lede">Projects, large files, local AI models, uninstall, and a report you can paste into a bug thread. All of it follows the same rule: show the evidence before offering the action.</p>
+      </div>
+    </header>
+
+    <div class="spec-list reveal">
+      <article class="spec">
+        <span class="spec-num">01</span>
+        <h3>Projects</h3>
+        <p>Finds <b>node_modules</b>, Rust <b>target</b>, SwiftPM <b>.build</b>, Python virtualenvs and CocoaPods in projects you haven't touched for 30 to 180 days. A folder is listed only when the manifest next to it proves what it is. Everything goes to the Trash.</p>
+        <span class="spec-tag">Trash</span>
+      </article>
+      <article class="spec">
+        <span class="spec-num">02</span>
+        <h3>Large Files</h3>
+        <p>The biggest single files in Downloads, Desktop, Documents, Movies, Music and Pictures, with how long since you opened each. Scans only when you press Scan. Files only, never folders, app bundles or photo libraries.</p>
+        <span class="spec-tag">Trash</span>
+      </article>
+      <article class="spec">
+        <span class="spec-num">03</span>
+        <h3>AI Models</h3>
+        <p>The models Ollama, Hugging Face and LM Studio downloaded, with sizes and when each was last used. Ollama models share files, so each size is what removing that one frees. Each model is checked again just before it moves, and nothing moves while an Ollama download is running. Reads names, sizes and dates only.</p>
+        <span class="spec-tag">Trash</span>
+      </article>
+      <article class="spec">
+        <span class="spec-num">04</span>
+        <h3>Uninstall</h3>
+        <p>Pick an app or drop one onto the window. Leftovers appear with sizes before anything moves. Only exact matches. Everything goes to the Trash, and there is an Undo.</p>
+        <span class="spec-tag">Undo</span>
+      </article>
+      <article class="spec">
+        <span class="spec-num">05</span>
+        <h3>Copy Report</h3>
+        <p>A plain-text summary for a bug report: your Mac, pressure, swap, the biggest apps and the last day's peak. App names and sizes only. No file paths. No username. Nothing sent anywhere.</p>
+        <span class="spec-tag">Local</span>
+      </article>
+      <article class="spec">
+        <span class="spec-num">06</span>
+        <h3>The small things</h3>
+        <p>Start at login. Dock badge. <b>⌥⌘B</b>. Sort by memory or CPU. Reveal in Finder. Light and dark, and Liquid Glass on macOS 26. The shortcut is off by default, because claiming a system shortcut is not something an app should help itself to.</p>
+        <span class="spec-tag">Native</span>
+      </article>
+      <article class="spec">
+        <span class="spec-num">07</span>
+        <h3>boost.sh</h3>
+        <p>The same job without a window: close, pause, resume, dry-run. Pins are written to a file the script and the app both read, so a hotkey and the menu bar agree.</p>
+        <span class="spec-tag">CLI</span>
+      </article>
+    </div>
+
+    <div class="term reveal">
+      <div class="term-bar">
+        <i class="tl r" aria-hidden="true"></i><i class="tl y" aria-hidden="true"></i><i class="tl g" aria-hidden="true"></i>
+        <span>boost.sh · zsh</span>
+      </div>
+      <pre><span class="trow"><span class="tcmd"><span class="p">$</span> ./boost.sh</span><span class="c"># close apps and helpers</span></span><span class="trow"><span class="tcmd"><span class="p">$</span> ./boost.sh --pause</span><span class="c"># freeze them instead</span></span><span class="trow"><span class="tcmd"><span class="p">$</span> ./boost.sh --resume</span><span class="c"># unfreeze everything, system-wide</span></span><span class="trow"><span class="tcmd"><span class="p">$</span> ./boost.sh --dry-run</span><span class="c"># show what it would touch, change nothing</span></span></pre>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-index"><b>07</b><span>Install</span></div>
+      <div class="sec-title">
+        <h2 id="install-title">Install it in one line.</h2>
+        <p class="lede">Homebrew clears the quarantine flag for you. Building from source never sets one, and needs only the Command Line Tools, not Xcode.</p>
+      </div>
+    </header>
+
+    <div class="install-grid">
+      <div class="install-side reveal">
+        <div class="fineprint">
+          <p class="mono">On signing, plainly</p>
+          <p>Boost is signed with a local certificate, not notarized. Notarizing needs a paid Apple Developer account, which a free app does not have. The Homebrew cask clears the quarantine flag. A source build never sets one. <a href="https://github.com/Kernel-Hunter/boost#on-signing" target="_blank" rel="noopener">Read the full note</a>.</p>
+        </div>
+        <p class="micro">macOS 14+ · Apple Silicon + Intel · one universal binary · GPL-3.0</p>
+      </div>
+
+      <div class="reveal" style="--d:90ms">
+        <div class="installer">
+          <div class="installer-bar" role="tablist" aria-label="Install method">
+            <button type="button" role="tab" aria-selected="true" data-install="brew">Homebrew</button>
+            <button type="button" role="tab" aria-selected="false" data-install="source">From source</button>
+            <button class="copy-mini" type="button" data-copy="brew install --cask kernel-hunter/boost/boost" aria-label="Copy install command">
+              <svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span>
+            </button>
+          </div>
+          <pre id="installCode"><span class="p">$</span> brew install --cask kernel-hunter/boost/boost</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="perm reveal">
+      <div class="perm-head">
+        <h3>Permissions, in full.</h3>
+        <span class="mono">No permission is required for the core app</span>
+      </div>
+      <div class="perm-scroll">
+        <table class="perm-table">
+          <thead><tr><th>What</th><th>Why</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td class="none">None</td><td>Reading the process table and memory stats; signalling your own apps.</td><td>Always</td></tr>
+            <tr><td>Accessibility</td><td>Counting an app's open windows for “close button quits the app”.</td><td>Only if you enable it</td></tr>
+            <tr><td>Notifications</td><td>The swap and pressure alerts.</td><td>Only if you turn them on</td></tr>
+            <tr><td>Login item</td><td>Starting Boost at login.</td><td>Only if you turn it on</td></tr>
+            <tr><td>Admin password</td><td>The optional <code>/usr/sbin/purge</code> disk cache.</td><td>Only if you enable purge</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="close" aria-labelledby="close-title">
+  <div class="wrap">
+    <p class="mono">08 · End of readout</p>
+    <h2 id="close-title">Free. And the parts that matter always will be.</h2>
+    <p class="lede">Safety, honest readings, and everything that already shipped free stay free. That rule is written into the source, not the marketing: <a href="https://github.com/Kernel-Hunter/boost/blob/main/Sources/BoostKit/Pro.swift" target="_blank" rel="noopener">Pro.swift</a>.</p>
+    <button class="cmd" type="button" data-copy="brew install --cask kernel-hunter/boost/boost" aria-label="Copy Homebrew install command">
+      <span class="dollar" aria-hidden="true">$</span>
+      <code>brew install --cask kernel-hunter/boost/boost</code>
+      <span class="copy" aria-hidden="true"><svg class="ico"><use href="#i-copy"/></svg></span>
+    </button>
+    <div class="close-links">
+      <a href="https://github.com/Kernel-Hunter/boost" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Kernel-Hunter/boost#readme" target="_blank" rel="noopener">README</a>
+      <a href="guides/">Guides</a>
+      <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+      <a href="https://github.com/Kernel-Hunter/boost/blob/main/LICENSE" target="_blank" rel="noopener">GPL-3.0</a>
+    </div>
+    <div class="watermark" aria-hidden="true">boost</div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <a class="brand" href="#top" aria-label="Boost, back to top">
+      <span class="brand-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>
+      Boost
+    </a>
+    <p>Built by Karim Masmoudi · GPL-3.0<br>No cookies, no analytics, no third-party requests.</p>
+    <nav aria-label="Footer">
+      <a href="https://github.com/Kernel-Hunter/boost" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Kernel-Hunter/boost#readme" target="_blank" rel="noopener">README</a>
+      <a href="guides/">Guides</a>
+      <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+    </nav>
+  </div>
+</footer>
 </body>
 </html>
