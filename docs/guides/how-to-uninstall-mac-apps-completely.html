@@ -11,11 +11,14 @@
 <meta property="og:site_name" content="Boost">
 <meta property="og:title" content="How to uninstall Mac apps completely, with leftover files | Boost">
 <meta property="og:description" content="Dragging an app to the Trash leaves files behind. Where Mac app leftovers live in your Library, how to check by hand, what not to delete, and tools that help.">
-<meta property="og:image" content="https://kernel-hunter.github.io/boost/images/social-preview.png">
+<meta property="og:image" content="https://kernel-hunter.github.io/boost/assets/img/social-preview.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#101514">
+<meta name="twitter:title" content="How to uninstall Mac apps completely, with leftover files | Boost">
+<meta name="twitter:description" content="Dragging an app to the Trash leaves files behind. Where Mac app leftovers live in your Library, how to check by hand, what not to delete, and tools that help.">
+<meta name="twitter:image" content="https://kernel-hunter.github.io/boost/assets/img/social-preview.png">
+<meta name="theme-color" content="#080c0b">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -37,91 +40,65 @@
   }
 }
 </script>
-<style>
-:root {
-  --bg: #fbfcfc; --fg: #14201d; --muted: #5b6b66; --card: #ffffff; --line: #e1e8e6;
-  --brand: #159e86; --brand-fg: #ffffff; --code: #eef3f2;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #101514; --fg: #e8f0ee; --muted: #93a6a1; --card: #171e1c; --line: #26302e;
-    --brand: #3fd1b0; --brand-fg: #08130f; --code: #1c2523;
-  }
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0; background: var(--bg); color: var(--fg);
-  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-}
-a { color: var(--brand); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
-.prose { max-width: 720px; }
-nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
-nav .name { font-weight: 700; font-size: 20px; color: var(--fg); text-decoration: none; }
-.navlinks { display: flex; align-items: center; gap: 18px; }
-.navlinks a { color: var(--fg); text-decoration: none; font-size: 15px; }
-.navlinks a.gh { border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; }
-.navlinks a.here { color: var(--muted); }
-h1 { font-size: clamp(30px, 4.6vw, 44px); line-height: 1.12; margin: 36px 0 14px; letter-spacing: -0.02em; }
-.byline { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
-.short { font-size: 19px; margin: 0 0 8px; }
-h2 { font-size: 25px; line-height: 1.25; margin: 40px 0 10px; letter-spacing: -0.01em; }
-p { margin: 0 0 16px; }
-ul, ol { margin: 0 0 16px; padding-left: 22px; }
-li { margin-bottom: 8px; }
-code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); padding: 1px 5px; border-radius: 5px; }
-pre { background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto;
-  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0 0 18px; }
-pre code { background: none; padding: 0; font-size: inherit; }
-table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--card);
-  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0 0 20px; }
-th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--muted); font-weight: 600; }
-tr:last-child td { border-bottom: 0; }
-.tablewrap { overflow-x: auto; }
-.note { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand);
-  border-radius: 10px; padding: 16px 18px; color: var(--muted); font-size: 15px; margin: 28px 0 0; }
-.note p { margin: 0 0 10px; }
-.note p:last-child { margin: 0; }
-.related { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
-.related h2 { font-size: 19px; margin: 0 0 10px; }
-.related ul { list-style: none; padding: 0; }
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 28px 0 0; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-.card h2 { font-size: 18px; margin: 0 0 6px; }
-.card p { margin: 0; color: var(--muted); font-size: 15px; }
-.card a { text-decoration: none; color: var(--fg); }
-.card a:hover h2 { color: var(--brand); }
-footer { margin-top: 56px; padding: 28px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
-@media (max-width: 800px) {
-  .grid { grid-template-columns: 1fr; }
-  .navlinks { gap: 12px; }
-}
-</style>
+<link rel="icon" href="../assets/img/icon.png">
+<link rel="apple-touch-icon" href="../assets/img/icon.png">
+<link rel="preload" href="../assets/fonts/archivo-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/azeret-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/guides.css">
+<script src="../assets/js/site.js" defer></script>
 </head>
-<body>
-<div class="wrap">
-  <nav>
-    <a class="name" href="../index.html">Boost</a>
-    <div class="navlinks">
-      <a href="../index.html">Home</a>
-      <a href="index.html">Guides</a>
-      <a class="gh" href="https://github.com/Kernel-Hunter/boost">GitHub</a>
+<body class="guide-page">
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.4 2 4.6 13.5h5.6L9.6 22l9.1-11.9h-5.8L13.4 2Z" fill="currentColor"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3H6a2 2 0 0 0-2 2v6.5A2.5 2.5 0 0 0 6.5 14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 17 17 7M8 7h9v9"/></symbol>
+</svg>
+
+<header class="menubar" id="top">
+  <div class="wrap menubar-inner">
+    <a class="brand" href="../" aria-label="Boost home">
+      <span class="brand-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>
+      Boost
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../#number">The number</a>
+      <a href="../#app">The app</a>
+      <a href="../#pause">Pause</a>
+      <a href="../#disk">Disk</a>
+      <a href="../#history">History</a>
+      <a href="../#install">Install</a>
+      <a href="./" aria-current="page">Guides</a>
+    </nav>
+    <div class="menubar-meta">
+      <span class="net"><i aria-hidden="true"></i>No network</span>
+      <a class="pill" href="../#install">Install</a>
     </div>
-  </nav>
-  <main class="prose">
-<h1>How to uninstall Mac apps completely</h1>
-<p class="byline">By Karim Masmoudi, published 22 October 2026</p>
+  </div>
+</header>
+
+<div class="grain" aria-hidden="true"></div>
+
+<main id="main">
+<div class="article-wrap">
+  <div class="wrap article">
+    <header class="a-head">
+      <div class="a-meta"><p class="eyebrow mono">Guide</p><p class="byline mono">By Karim Masmoudi, published 22 October 2026</p></div>
+      <h1>How to uninstall Mac apps completely</h1>
+    </header>
+    <div class="prose">
 <p class="short">Dragging an app to the Trash removes the app but not everything it created. Preferences, caches, support files and background helpers stay in your Library. If the app has its own uninstaller, run that first. Otherwise trash the app, then look for leftovers in a handful of Library folders by the app's name or bundle identifier, and move only what clearly belongs to that app to the Trash.</p>
 
 <h2>Start with the proper uninstall</h2>
-<p>Quit the app first. Apple's guide, <a href="https://support.apple.com/102610">Uninstall apps on your Mac</a>, says to look for an uninstaller in the app's folder or a remove option inside the app, because that is the most thorough route. It also says that if there is none, you move the app to the Trash, and that deleting an app does not delete documents you made with it.</p>
+<p>Quit the app first. Apple's guide, <a href="https://support.apple.com/102610" target="_blank" rel="noopener">Uninstall apps on your Mac</a>, says to look for an uninstaller in the app's folder or a remove option inside the app, because that is the most thorough route. It also says that if there is none, you move the app to the Trash, and that deleting an app does not delete documents you made with it.</p>
 <p>For many apps the leftovers are small. They matter more for large apps, for apps that install background helpers, and for apps you are removing because they misbehaved.</p>
 
 <h2>Where leftovers live</h2>
 <p>Your Library folder is hidden. In Finder, hold Option and open the Go menu to see Library, or press Shift-Command-G and type <code>~/Library</code>.</p>
-<div class="tablewrap">
+<div class="tablewrap" role="region" aria-label="Table" tabindex="0">
 <table>
 <tr><th>Folder in ~/Library</th><th>What is in it</th></tr>
 <tr><td>Application Support</td><td>The app's data, plugins and databases.</td></tr>
@@ -136,10 +113,10 @@ footer { margin-top: 56px; padding: 28px 0 48px; color: var(--muted); font-size:
 
 <h2>Check by hand</h2>
 <p>Find the bundle identifier before you trash the app, because it is easiest to read while the app is still there:</p>
-<pre><code>mdls -name kMDItemCFBundleIdentifier /Applications/Foo.app
+<pre tabindex="0"><code>mdls -name kMDItemCFBundleIdentifier /Applications/Foo.app
 kMDItemCFBundleIdentifier = "com.example.foo"</code></pre>
 <p>Then search your Library for it. This only reads:</p>
-<pre><code>find ~/Library -maxdepth 2 -iname '*com.example.foo*' 2&gt;/dev/null
+<pre tabindex="0"><code>find ~/Library -maxdepth 2 -iname '*com.example.foo*' 2&gt;/dev/null
 find ~/Library -maxdepth 2 -iname '*foo*' 2&gt;/dev/null</code></pre>
 <p>The second search catches folders named after the app instead of its identifier. It also catches unrelated things with a similar name, so read each result. Terminal may be refused access to some folders. If so, browse them in Finder instead.</p>
 <p>A folder called <code>com.example.foo</code> is clearly the app's. A folder that just contains the word is not proof.</p>
@@ -165,13 +142,39 @@ find ~/Library -maxdepth 2 -iname '*foo*' 2&gt;/dev/null</code></pre>
 <p>Boost's Uninstall tab is one of these. Pick an app, or drop it on the window, and it lists the leftovers it found in your Library with sizes before anything moves. It lists exact matches only, sends everything to the Trash, and has an Undo.</p>
 <p>Boost is free and open source (GPL-3.0), and not notarized by Apple, so the first launch needs an extra step, described on its <a href="../index.html">home page</a>.</p>
 </div>
-<div class="related"><h2>More guides</h2><ul><li><a href="how-to-free-up-ram-on-mac.html">How to free up RAM on a Mac: what works and what does not</a></li><li><a href="what-is-memory-pressure-on-mac.html">What is memory pressure on a Mac?</a></li><li><a href="is-cached-memory-bad-on-mac.html">Is cached memory bad on a Mac?</a></li><li><a href="mac-system-data-storage-explained.html">Mac System Data storage explained: what it is and what is safe to delete</a></li></ul><p><a href="index.html">All guides</a></p></div>
-  </main>
-
-  <footer>
-    Written by <a href="https://github.com/Kernel-Hunter">Karim Masmoudi</a>. Boost is free and open source, GPL-3.0.
-    <a href="https://github.com/Kernel-Hunter/boost">Source on GitHub</a>
-  </footer>
+<aside class="related" aria-label="More guides"><h2>More guides</h2><ul><li><a href="how-to-free-up-ram-on-mac.html">How to free up RAM on a Mac: what works and what does not</a></li><li><a href="what-is-memory-pressure-on-mac.html">What is memory pressure on a Mac?</a></li><li><a href="is-cached-memory-bad-on-mac.html">Is cached memory bad on a Mac?</a></li><li><a href="mac-system-data-storage-explained.html">Mac System Data storage explained: what it is and what is safe to delete</a></li></ul><p><a href="index.html">All guides</a></p></aside>
+  
+    </div>
+    <section class="callout" aria-labelledby="cta-title">
+      <p class="mono" id="cta-title">Install Boost</p>
+      <p class="callout-text">Free and open source, installed with Homebrew.</p>
+      <div class="hero-actions">
+        <button class="cmd" type="button" data-copy="brew install --cask kernel-hunter/boost/boost" aria-label="Copy Homebrew install command">
+          <span class="dollar" aria-hidden="true">$</span>
+          <code>brew install --cask kernel-hunter/boost/boost</code>
+          <span class="copy" aria-hidden="true"><svg class="ico"><use href="#i-copy"/></svg></span>
+        </button>
+        <a class="text-link" href="../#install">Other ways to install</a>
+      </div>
+    </section>
+  </div>
 </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <a class="brand" href="../" aria-label="Boost home">
+      <span class="brand-mark"><svg aria-hidden="true"><use href="#i-bolt"/></svg></span>
+      Boost
+    </a>
+    <p>Built by Karim Masmoudi · GPL-3.0<br>No cookies, no analytics, no third-party requests.</p>
+    <nav aria-label="Footer">
+      <a href="https://github.com/Kernel-Hunter/boost" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Kernel-Hunter/boost#readme" target="_blank" rel="noopener">README</a>
+      <a href="./">Guides</a>
+      <a href="https://github.com/Kernel-Hunter/boost/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+    </nav>
+  </div>
+</footer>
 </body>
 </html>
