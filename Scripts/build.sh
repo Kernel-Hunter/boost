@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 
 # One place. The release workflow reads it from here rather than being told
 # separately, so a tag and a bundle cannot disagree about what they are.
-VERSION="1.4.1"
+VERSION="1.5.0"
 
 # Where the app looks for new versions, and the key every update must be
 # signed with. The feed is docs/appcast.xml, served by the project's GitHub
