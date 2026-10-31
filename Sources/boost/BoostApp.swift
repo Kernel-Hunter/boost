@@ -9,6 +9,7 @@ struct BoostApp: App {
         if let directory = Snapshot.requestedDirectory() {
             MainActor.assumeIsolated { Snapshot.run(to: directory) }
         }
+        MainActor.assumeIsolated { Updates.shared.start() }
     }
 
     var body: some Scene {
@@ -19,6 +20,10 @@ struct BoostApp: App {
         .defaultSize(width: 1040, height: 760)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            // Under the app name, next to About, where Mac apps put it.
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton()
+            }
             CommandGroup(after: .toolbar) {
                 Button("Refresh") { Engine.shared.refresh() }
                     .keyboardShortcut("r", modifiers: .command)
