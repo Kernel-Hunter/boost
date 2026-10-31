@@ -5,5 +5,15 @@
     <link>https://kernel-hunter.github.io/boost/appcast.xml</link>
     <description>New versions of Boost. Edited by Scripts/appcast.sh, not by hand.</description>
     <language>en</language>
+    <item>
+      <title>Boost 1.5.0</title>
+      <pubDate>Sat, 31 Oct 2026 20:18:27 +0000</pubDate>
+      <sparkle:version>1.5.0</sparkle:version>
+      <sparkle:shortVersionString>1.5.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description>&lt;p&gt;See &lt;a href="https://github.com/Kernel-Hunter/boost/releases/tag/v1.5.0"&gt;what changed in Boost 1.5.0&lt;/a&gt; on GitHub.&lt;/p&gt;</description>
+      <sparkle:fullReleaseNotesLink>https://github.com/Kernel-Hunter/boost/releases/tag/v1.5.0</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/Kernel-Hunter/boost/releases/download/v1.5.0/Boost.zip" length="6735771" type="application/octet-stream" sparkle:edSignature="qrjKu2xBzLo54Xd1eld2MoLYKJ7N6zY70eK3dKdlOPB41mlw+zL6GmAvyu6EHKfJWFsj/qMU/SO5Tm1kpS2ICA==" />
+    </item>
   </channel>
 </rss>
