@@ -71,6 +71,11 @@ Explain the problem, not the diff. A reader can see what changed; what they
 cannot see is what was wrong, why the obvious fix was wrong, and what
 convinced you it works now.
 
+## Releasing
+
+Maintainers: see [docs/releasing.md](docs/releasing.md). Pushing a tag builds
+the release; `Scripts/appcast.sh` then signs it and adds it to the update feed.
+
 ## Before opening a PR
 
 ```bash
