@@ -8,6 +8,7 @@ public struct BoostSettingsView: View {
     @ObservedObject private var rules = Rules.shared
     @ObservedObject private var autoPause = AutoPause.shared
     @StateObject private var login = LoginItemModel()
+    @ObservedObject private var updates = Updates.shared
 
     public init() {}
 
@@ -28,6 +29,21 @@ public struct BoostSettingsView: View {
                     .help("Opens Boost and closes what is ticked, from any app.")
                 Toggle("Resume everything when Boost quits", isOn: $engine.resumeOnQuit)
                     .help("Nothing is ever left frozen because Boost went away.")
+            }
+
+            if updates.isAvailable {
+                Section("Updates") {
+                    Toggle("Check for updates automatically", isOn: $updates.automaticallyChecks)
+                        .help("Once a day, Boost asks GitHub whether a newer version exists. "
+                            + "Nothing is installed until you click Install.")
+                    HStack {
+                        Text(updateStatus)
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Check Now") { updates.checkForUpdates() }
+                            .disabled(!updates.canCheck)
+                    }
+                }
             }
 
             Section("Sleeping apps") {
@@ -114,5 +130,26 @@ public struct BoostSettingsView: View {
         .formStyle(.grouped)
         .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var updateStatus: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+        guard let last = updates.lastChecked else { return "Boost \(version)" }
+        return "Boost \(version), last checked \(last.formatted(.relative(presentation: .named)))"
+    }
+}
+
+/// The menu command. Its own view so it can follow `canCheck`: a Commands
+/// builder cannot observe an object by itself.
+public struct CheckForUpdatesButton: View {
+    @ObservedObject private var updates = Updates.shared
+
+    public init() {}
+
+    public var body: some View {
+        if updates.isAvailable {
+            Button("Check for Updates…") { updates.checkForUpdates() }
+                .disabled(!updates.canCheck)
+        }
     }
 }

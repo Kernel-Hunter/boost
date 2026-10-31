@@ -25,9 +25,32 @@ Expect a reply within a week. There is no bounty — this is a solo project.
 | Accessibility (optional) | Count an app's open windows, for "close button quits the app" | Read-only, window counts only. Off unless you enable the feature |
 | Admin password (optional) | `/usr/sbin/purge` | Off by default. See below |
 
-It does **not** read window contents, keystrokes, files, or the network. It has
-no analytics, no telemetry, no update check, and makes no outbound connections
-of any kind. There is nothing to opt out of.
+It does **not** read window contents, keystrokes or files. It has no analytics
+and no telemetry. Its only outbound connection is the update check below.
+
+## Update checks
+
+Boost updates itself with [Sparkle](https://sparkle-project.org) 2, pinned to
+an exact version in `Package.swift`.
+
+- **What is sent.** One HTTPS GET for
+  `https://kernel-hunter.github.io/boost/appcast.xml`, a small file listing the
+  latest version. No identifiers, no system profile (`SUEnableSystemProfiling`
+  is never set). Like any request it carries your IP address and a User-Agent
+  with Boost's and Sparkle's version numbers. If you install an update, the zip
+  is downloaded from GitHub Releases.
+- **When.** Never on the first launch. On the second launch Sparkle asks
+  whether to check automatically; say no and nothing is sent unless you click
+  Check for Updates. Say yes and it checks about once a day.
+- **How to turn it off.** Settings, Updates, "Check for updates
+  automatically".
+- **What gets installed.** Nothing without your click. Automatic installs are
+  disabled (`SUAllowsAutomaticUpdates` is off). Every update zip must carry an
+  EdDSA signature that matches the public key built into the app
+  (`SUPublicEDKey`), or Sparkle refuses it before replacing anything. The
+  private key never leaves the maintainer's Mac and is not stored in GitHub, so
+  a compromised GitHub account alone cannot ship an update. Details in
+  `docs/releasing.md`.
 
 ## The guard list
 
@@ -59,16 +82,22 @@ Turn the feature off and Boost never calls the API.
 
 ## Code signing
 
-Release builds are signed and notarized. Builds you make yourself are signed
-with a local self-signed certificate (see `docs/codesigning.md`) — which is why
-a build of your own will ask for Accessibility access again the first time.
+Release builds are ad-hoc signed by CI and are not notarized, because
+notarizing needs a paid Apple Developer account. Builds you make yourself are
+signed with a local self-signed certificate if you created one (see
+`docs/codesigning.md`), which is why a build of your own will ask for
+Accessibility access again the first time. Updates are verified with Sparkle's
+EdDSA signature, not with Apple code signing, as described above.
 
 Verify a release before trusting it:
 
 ```bash
-codesign -dv --verbose=4 /Applications/Boost.app
-spctl -a -vvv -t exec /Applications/Boost.app
+shasum -a 256 Boost.zip        # compare with the SHA-256 in the release notes
+codesign --verify --deep --strict /Applications/Boost.app
 ```
+
+`spctl` will reject a release build, because it is not notarized. That is
+expected and is not a sign of tampering.
 
 ## Scope
 

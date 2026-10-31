@@ -10,7 +10,14 @@ cd "$(dirname "$0")/.."
 
 # One place. The release workflow reads it from here rather than being told
 # separately, so a tag and a bundle cannot disagree about what they are.
-VERSION="1.4.1"
+VERSION="1.5.0"
+
+# Where the app looks for new versions, and the key every update must be
+# signed with. The feed is docs/appcast.xml, served by the project's GitHub
+# Pages site; Scripts/appcast.sh adds each release to it. The public key's
+# private half never leaves the maintainer's Keychain. See docs/releasing.md.
+FEED_URL="https://kernel-hunter.github.io/boost/appcast.xml"
+ED_PUBLIC_KEY="QKKfpvfADDZDhLbEDTOZ4QKgc5EgHgxP3hGulato8T8="
 
 DEST="/Applications/Boost.app"
 BUILD="build.noindex"
@@ -55,8 +62,17 @@ done
 echo "  universal binary: $SLICES"
 
 rm -rf "$STAGE"
-mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources"
+mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources" "$STAGE/Contents/Frameworks"
 cp "$BUILD/Boost" "$STAGE/Contents/MacOS/Boost"
+
+# Sparkle, for in-app updates. SwiftPM leaves the framework next to the
+# binary; the binary looks for it in Contents/Frameworks (the rpath is set in
+# Package.swift). ditto rather than cp -R, because a framework is mostly
+# symlinks and cp can flatten them into copies, which breaks its signature.
+if [ ! -d "$BIN_PATH/Sparkle.framework" ]; then
+  echo "error: Sparkle.framework not found in $BIN_PATH" >&2; exit 1
+fi
+ditto "$BIN_PATH/Sparkle.framework" "$STAGE/Contents/Frameworks/Sparkle.framework"
 
 cat > "$STAGE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -75,6 +91,9 @@ cat > "$STAGE/Contents/Info.plist" <<PLIST
   <key>NSHighResolutionCapable</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSSupportsAutomaticTermination</key><false/>
+  <key>SUFeedURL</key><string>$FEED_URL</string>
+  <key>SUPublicEDKey</key><string>$ED_PUBLIC_KEY</string>
+  <key>SUAllowsAutomaticUpdates</key><false/>
 </dict></plist>
 PLIST
 
@@ -85,13 +104,36 @@ PLIST
 # orphaned the grant and silently broke auto-quit-on-close. This identity
 # stays the same across rebuilds, so the grant survives them.
 # One-time setup that created it: see ../docs/codesigning.md
+#
+# CI has no such identity, so release builds are ad-hoc. Sparkle accepts an
+# update between two ad-hoc builds: what it trusts is the EdDSA signature on
+# the zip, and it only asks that the new app's own code signature be valid,
+# not that it match the old one. See docs/releasing.md.
 if security find-identity -p codesigning -v 2>/dev/null | grep -q "Boost Local Dev"; then
-  codesign --force --deep --sign "Boost Local Dev" "$STAGE" 2>&1 | grep -v "^$" || true
+  IDENTITY="Boost Local Dev"
 else
-  echo "  WARNING: 'Boost Local Dev' signing identity not found — falling back to ad-hoc."
+  echo "  WARNING: 'Boost Local Dev' signing identity not found, falling back to ad-hoc."
   echo "  Accessibility permission will need re-granting after this build."
-  codesign --force --sign - "$STAGE" 2>/dev/null || echo "  (unsigned — still runs)"
+  IDENTITY="-"
 fi
+
+# Inside out, never --deep. --deep signs nested code in whatever order it
+# finds it and gives every piece the same options, and Apple has deprecated
+# it for signing. Sparkle's helpers are signed first, then the framework that
+# contains them, then the app that contains the framework: each signature
+# covers the ones inside it, so signing in any other order leaves a seal over
+# code that was changed afterwards.
+SPARKLE="$STAGE/Contents/Frameworks/Sparkle.framework/Versions/B"
+sign() { codesign --force --sign "$IDENTITY" "$@"; }
+sign "$SPARKLE/XPCServices/Installer.xpc"
+# The downloader service carries entitlements of its own (network client).
+sign --preserve-metadata=entitlements "$SPARKLE/XPCServices/Downloader.xpc"
+sign "$SPARKLE/Autoupdate"
+sign "$SPARKLE/Updater.app"
+sign "$STAGE/Contents/Frameworks/Sparkle.framework"
+sign "$STAGE"
+codesign --verify --deep --strict "$STAGE"
+echo "  signed: $IDENTITY"
 
 if [ "$INSTALL" = 0 ]; then echo "built (not installed): $STAGE"; exit 0; fi
 

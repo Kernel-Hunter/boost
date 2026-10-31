@@ -55,8 +55,11 @@ jobs:
 
           Or download \`Boost.zip\` below and drag it to Applications.
 
-          Boost is **not notarized** — it is signed with a local certificate, so
-          a direct download will be stopped by Gatekeeper the first time.
+          Already on Boost 1.5.0 or later? Choose Check for Updates in the Boost
+          menu and click Install.
+
+          Boost is **not notarized**, so a direct download will be stopped by
+          Gatekeeper the first time.
           Homebrew handles this for you; if you downloaded the zip by hand,
           right-click the app and choose *Open*.
 

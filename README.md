@@ -28,7 +28,8 @@ It lives in your menu bar, shows what is really using your RAM, pauses apps you 
 
 If you looked at CleanMyMac, iStat Menus or AppCleaner and did not want a
 subscription, Boost covers the parts most people actually use. No account, no
-analytics, no network access of any kind.
+analytics, and the only network request it makes is an update check you can
+turn off.
 
 ## Install
 
@@ -46,13 +47,24 @@ cd boost && ./Scripts/build.sh
 Needs macOS 14 or later. One universal binary for Apple Silicon and Intel. It
 builds with the Command Line Tools, so Xcode is not required.
 
+### Updating
+
+From 1.5.0 on, Boost updates itself. Choose Check for Updates… in the Boost
+menu, or let it check once a day (it asks the second time you open it). When a
+new version is out you see what changed and click Install. There is nothing to
+delete or download by hand, and this works the same if you installed with
+Homebrew.
+
+If you have 1.4.1 or older, update once the old way (`brew upgrade --cask boost`,
+or download the new zip). After that the app does it.
+
 <details>
 <summary><b>About signing and Gatekeeper</b></summary>
 
 <br>
 
-Boost is signed with a local certificate, not notarized, because notarizing needs
-a paid Apple Developer account. A downloaded `.zip` will be stopped by Gatekeeper
+Boost is not notarized, because notarizing needs a paid Apple Developer
+account. A downloaded `.zip` will be stopped by Gatekeeper
 the first time. The Homebrew cask clears the quarantine flag for you, and building
 from source never sets one, so use one of those two.
 
@@ -165,8 +177,12 @@ far enough, the kernel may kill something on its own.
 | Login item | Starting Boost at login | Only if you turn it on |
 | Admin password | `/usr/sbin/purge` | Only if you turn on the optional disk cache purge |
 
-No analytics, no telemetry, no update check, no network access of any kind. There
-is nothing to opt out of. See [SECURITY.md](SECURITY.md).
+No analytics and no telemetry. The one network request Boost makes is the update
+check: it downloads a small file listing the latest version from
+`kernel-hunter.github.io` over HTTPS. It sends no identifiers, only what any
+download sends (your IP address, and a User-Agent naming Boost's version). It
+happens only after you say yes to automatic checks, or when you click Check for
+Updates. Turn it off in Settings, under Updates. See [SECURITY.md](SECURITY.md).
 
 </details>
 

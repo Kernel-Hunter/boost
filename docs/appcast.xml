@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Boost</title>
+    <link>https://kernel-hunter.github.io/boost/appcast.xml</link>
+    <description>New versions of Boost. Edited by Scripts/appcast.sh, not by hand.</description>
+    <language>en</language>
+  </channel>
+</rss>
